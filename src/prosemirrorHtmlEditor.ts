@@ -244,7 +244,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
         const hyperlink = new HyperlinkModel();
         hyperlink.href = hyperlinkMark.attrs.href;
-        hyperlink.permalinkKey = hyperlinkMark.attrs.contentTypeKey;
+        hyperlink.targetKey = hyperlinkMark.attrs.contentTypeKey;
         hyperlink.target = hyperlinkMark.attrs.target;
 
         return hyperlink;
