@@ -218,7 +218,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             return;
         }
 
-        if (!hyperlink.href && !hyperlink.permalinkKey) {
+        if (!hyperlink.href && !hyperlink.targetKey) {
             return;
         }
 
@@ -227,7 +227,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         if (!doc.rangeHasMark(selection.from, selection.to, this.schema.marks.hyperlink)) {
             attrs = {
                 href: hyperlink.href,
-                contentTypeKey: hyperlink.permalinkKey,
+                contentTypeKey: hyperlink.targetKey,
                 target: hyperlink.target
             };
         }
