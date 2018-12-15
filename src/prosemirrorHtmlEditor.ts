@@ -436,7 +436,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public detachFromElement(): void {
-        // this.editorView.dom.contentEditable = false;
+        this.editorView.dom.contentEditable = false;
     }
 
     public addSelectionChangeListener(callback: () => void): void {
