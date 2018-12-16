@@ -1,6 +1,6 @@
 import { Schema, DOMParser } from "prosemirror-model";
 import { IStyleService } from "@paperbits/common/styles";
-
+import { addListNodes } from "prosemirror-schema-list";
 
 export class SchemaBuilder {
     constructor(private readonly styleService: IStyleService) {
@@ -11,11 +11,11 @@ export class SchemaBuilder {
             group: "block",
             content: "inline*",
             attrs: {
-                styleKey: { default: null },
+                styles: { default: null },
             },
             toDOM: (node) => {
-                if (node.attrs.styleKey) {
-                    const className = this.styleService.getClassNameByStyleKey(node.attrs.styleKey);
+                if (node.attrs.styles) {
+                    const className = this.styleService.getClassNamesByStyleConfig(node.attrs.styles);
                     return [tag, { class: className }, 0];
                 }
                 return [tag, 0];
@@ -98,6 +98,13 @@ export class SchemaBuilder {
                 }],
                 inclusive: false
             },
+            hard_break: {
+                inline: true,
+                group: "inline",
+                selectable: false,
+                parseDOM: [{ tag: "br" }],
+                toDOM() { return ["br"]; }
+            },
             doc: {
                 content: "block+"
             }
@@ -137,9 +144,20 @@ export class SchemaBuilder {
             }
         };
 
-        return new Schema({
+        const schema = new Schema({
             nodes: <any>nodes,
             marks: <any>marks
         });
+
+        // addListNodes(schema.spec.nodes, "paragraph block*", "block");
+
+        // const mySchema = new Schema({
+        //     nodes: addListNodes(schema.spec.nodes, "paragraph block*", "block"),
+        //     marks: schema.spec.marks
+        // });
+
+        // return mySchema;
+
+        return schema;
     }
 }

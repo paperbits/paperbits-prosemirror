@@ -1,15 +1,10 @@
 ﻿import { IEventManager } from "@paperbits/common/events";
-import * as Utils from "@paperbits/common/utils";
-import { IViewManager } from "@paperbits/common/ui";
 import { IStyleService } from "@paperbits/common/styles";
 import { IHtmlEditor, SelectionState, HtmlEditorEvents, HyperlinkContract } from "@paperbits/common/editing";
-import { Box } from "@paperbits/common/editing/box";
-
-
 import { Schema, DOMParser } from "prosemirror-model";
 import { EditorState, Plugin } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
-import { baseKeymap, toggleMark, setBlockType, wrapIn, } from "prosemirror-commands";
+import { baseKeymap, toggleMark, setBlockType, wrapIn, chainCommands, exitCode } from "prosemirror-commands";
 import { history, undo, redo } from "prosemirror-history";
 import { findWrapping, Transform } from "prosemirror-transform";
 import { keymap } from "prosemirror-keymap";
@@ -47,9 +42,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         this.toggleH5 = this.toggleH5.bind(this);
         this.toggleH6 = this.toggleH6.bind(this);
         this.toggleFormatted = this.toggleFormatted.bind(this);
-        // this.onHtmlEditorEvent = this.onHtmlEditorEvent.bind(this);
-        // this.getSelectionBoundaries = this.getSelectionBoundaries.bind(this);
-        // this.normalizeSelection = this.normalizeSelection.bind(this);
         this.detachFromElement = this.detachFromElement.bind(this);
         this.handleUpdates = this.handleUpdates.bind(this);
 
@@ -101,26 +93,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             formatting.underlined = state.doc.rangeHasMark(from, to, this.schema.marks.underlined);
             formatting.bold = state.doc.rangeHasMark(from, to, this.schema.marks.bold);
         }
-
-        // const node = this.getClosestNode(this.blockNodes);
-
-        // if (node) {
-        //     const alignment = node["alignment"];
-
-        //     if (alignment) {
-        //         formatting.alignment = alignment[viewport];
-        //     }
-
-        //     const typography = node["typography"];
-
-        //     if (typography) {
-        //         formatting.font = typography.font;
-        //     }
-
-        //     if (node["anchorKey"]) {
-        //         formatting.anchorKey = node["anchorKey"];
-        //     }
-        // }
 
         return formatting;
     }
@@ -261,10 +233,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         // Bindings.removeAnchor(node);
     }
 
-    public setSelection(domSelection: Selection): void {
-        // throw new Error("Not implemented");
-    }
-
     public getSelectionText(): string {
         throw new Error("Not implemented");
     }
@@ -285,7 +253,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         throw new Error("Not implemented");
     }
 
-    public alignLeft(): void {
+    private setAlignment(styleKey: string, viewport: string = "xs") {
         const cursor = this.editorView.state.selection.$cursor;
 
         if (!cursor) {
@@ -295,58 +263,31 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         const path = cursor.path.filter(x => x.type);
         const currentBlock = path[path.length - 1];
         const blockType = currentBlock.type;
+        const blockStyle = currentBlock.attrs.styles || {};
+
+        blockStyle.alignment = blockStyle.alignment || {};
+
+        Object.assign(blockStyle.alignment, { [viewport]: styleKey });
 
         setBlockType(this.schema.nodes.tmp)(this.editorView.state, this.editorView.dispatch);
-        setBlockType(blockType, { styleKey: "globals/text/alignedLeft" })(this.editorView.state, this.editorView.dispatch);
+        setBlockType(blockType, { styles: blockStyle })(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
     }
 
-    public alignCenter(): void {
-        const cursor = this.editorView.state.selection.$cursor;
-
-        if (!cursor) {
-            return;
-        }
-
-        const path = cursor.path.filter(x => x.type);
-        const currentBlock = path[path.length - 1];
-        const blockType = currentBlock.type;
-
-        setBlockType(this.schema.nodes.tmp)(this.editorView.state, this.editorView.dispatch);
-        setBlockType(blockType, { styleKey: "globals/text/centered" })(this.editorView.state, this.editorView.dispatch);
-        this.editorView.focus();
+    public alignLeft(viewport: string = "xs"): void {
+        this.setAlignment("globals/text/alignedLeft", viewport);
     }
 
-    public alignRight(): void {
-        const cursor = this.editorView.state.selection.$cursor;
-
-        if (!cursor) {
-            return;
-        }
-
-        const path = cursor.path.filter(x => x.type);
-        const currentBlock = path[path.length - 1];
-        const blockType = currentBlock.type;
-
-        setBlockType(this.schema.nodes.tmp)(this.editorView.state, this.editorView.dispatch);
-        setBlockType(blockType, { styleKey: "globals/text/alignedRight" })(this.editorView.state, this.editorView.dispatch);
-        this.editorView.focus();
+    public alignCenter(viewport: string = "xs"): void {
+        this.setAlignment("globals/text/centered", viewport);
     }
 
-    public justify(): void {
-        const cursor = this.editorView.state.selection.$cursor;
+    public alignRight(viewport: string = "xs"): void {
+        this.setAlignment("globals/text/alignedRight", viewport);
+    }
 
-        if (!cursor) {
-            return;
-        }
-
-        const path = cursor.path.filter(x => x.type);
-        const currentBlock = path[path.length - 1];
-        const blockType = currentBlock.type;
-
-        setBlockType(this.schema.nodes.tmp)(this.editorView.state, this.editorView.dispatch);
-        setBlockType(blockType, { styleKey: "globals/text/justified" })(this.editorView.state, this.editorView.dispatch);
-        this.editorView.focus();
+    public justify(viewport: string = "xs"): void {
+        this.setAlignment("globals/text/justified", viewport);
     }
 
     public setCaretAtEndOf(node: Node): void {
@@ -407,6 +348,12 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
         const doc: any = this.schema.nodeFromJSON(this.content.doc);
         const histKeymap = keymap({ "Mod-z": undo, "Mod-y": redo });
+        const otherKeymap = keymap({
+            "Ctrl-Enter": chainCommands(exitCode, (state, dispatch) => {
+                dispatch(state.tr.replaceSelectionWith(this.schema.nodes.hard_break.create()).scrollIntoView());
+                return true;
+            })
+        });
         const hu = this.handleUpdates;
 
         const detectChangesPlugin = new Plugin({
@@ -424,6 +371,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
                 doc,
                 plugins: plugins.concat([
                     histKeymap,
+                    otherKeymap,
                     keymap(buildKeymap(this.schema, null)),
                     keymap(baseKeymap),
                     history()])
@@ -436,7 +384,9 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public detachFromElement(): void {
-        this.editorView.dom.contentEditable = false;
+        if (this.editorView) {
+            this.editorView.dom.contentEditable = false;
+        }
     }
 
     public addSelectionChangeListener(callback: () => void): void {
