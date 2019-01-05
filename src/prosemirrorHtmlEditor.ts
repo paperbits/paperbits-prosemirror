@@ -97,8 +97,47 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         return formatting;
     }
 
+    private markExtend($cursor, markType) {
+        let startIndex = $cursor.index();
+        let endIndex = $cursor.indexAfter();
+
+        const hasMark = (index: number) =>
+            markType.isInSet($cursor.parent.child(index).marks);
+
+        // Clicked outside edge of tag.
+        if (startIndex === $cursor.parent.childCount) {
+            startIndex--;
+        }
+        while (startIndex > 0 && hasMark(startIndex)) {
+            startIndex--;
+        }
+        while (endIndex < $cursor.parent.childCount && hasMark(endIndex)) {
+            endIndex++
+        }
+
+        let startPos = $cursor.start();
+        let endPos = startPos;
+
+        for (let i = 0; i < endIndex; i++) {
+            const size = $cursor.parent.child(i).nodeSize;
+            if (i < startIndex) startPos += size;
+            endPos += size;
+        }
+
+        return { from: startPos, to: endPos };
+    }
+
     public removeHyperlink(): void {
-        throw new Error("Not implemented");
+        const state = this.editorView.state;
+        const hyperlinkMark = state.selection.$from.marks().find(x => x.type.name === "hyperlink");
+
+        if (!hyperlinkMark) {
+            return null;
+        }
+
+        const extendedSelection = this.markExtend(state.selection.$cursor, this.schema.marks.hyperlink);
+
+        this.editorView.dispatch(state.tr.removeMark(extendedSelection.from, extendedSelection.to, this.schema.marks.hyperlink));
     }
 
     public clearFormatting(): void {
