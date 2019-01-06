@@ -132,7 +132,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         const hyperlinkMark = state.selection.$from.marks().find(x => x.type.name === "hyperlink");
 
         if (!hyperlinkMark) {
-            return null;
+            return;
         }
 
         const extendedSelection = this.markExtend(state.selection.$cursor, this.schema.marks.hyperlink);
@@ -343,25 +343,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         // Api.editor.selection = Selections.select(Api.editor.selection, boundary, boundary);
         // this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
     }
-
-    private content1 = {
-        doc: {
-            type: "doc", content: [{
-                type: "paragraph", content: [{ type: "text", text: "This is a " },
-                { type: "text", text: "nice" },
-                { type: "text", text: " paragraph, it can have " },
-                { type: "text", marks: [{ type: "bold" }], text: "anything" },
-                { type: "text", text: " in it." }]
-            },
-            {
-                type: "paragraph", content:
-                    [{
-                        type: "text",
-                        text: "Press ctrl/cmd-space to insert a star, ctrl/cmd-b to toggle bold, and ctrl/cmd-q to add or remove a link."
-                    }]
-            }]
-        }, selection: { type: "text", anchor: 1, head: 1 }
-    };
 
     private handleUpdates(view, prevState) {
         this.eventManager.dispatchEvent("htmlEditorChanged", this);
