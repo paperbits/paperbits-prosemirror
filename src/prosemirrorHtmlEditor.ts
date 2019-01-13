@@ -314,19 +314,19 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public alignLeft(viewport: string = "xs"): void {
-        this.setAlignment("globals/text/alignedLeft", viewport);
+        this.setAlignment("utils/text/alignLeft", viewport);
     }
 
     public alignCenter(viewport: string = "xs"): void {
-        this.setAlignment("globals/text/centered", viewport);
+        this.setAlignment("utils/text/alignCenter", viewport);
     }
 
     public alignRight(viewport: string = "xs"): void {
-        this.setAlignment("globals/text/alignedRight", viewport);
+        this.setAlignment("utils/text/alignRight", viewport);
     }
 
     public justify(viewport: string = "xs"): void {
-        this.setAlignment("globals/text/justified", viewport);
+        this.setAlignment("utils/text/justify", viewport);
     }
 
     public setCaretAtEndOf(node: Node): void {
