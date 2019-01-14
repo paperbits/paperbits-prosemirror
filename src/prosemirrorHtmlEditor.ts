@@ -12,6 +12,14 @@ import { wrapInList } from "./lists";
 import { buildKeymap } from "./keymap";
 import { SchemaBuilder } from "./schema";
 import { HyperlinkModel } from "@paperbits/common/permalinks";
+import { IViewManager } from "@paperbits/common/ui";
+
+const alignmentStyleKeys = {
+    left: "utils/text/alignLeft",
+    center: "utils/text/alignCenter",
+    right: "utils/text/alignRight",
+    justify: "utils/text/justify"
+};
 
 
 export class ProseMirrorHtmlEditor implements IHtmlEditor {
@@ -23,8 +31,8 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     constructor(
         readonly eventManager: IEventManager,
-        readonly styleService: IStyleService
-
+        readonly styleService: IStyleService,
+        readonly viewManager: IViewManager
     ) {
         // rebinding...
         this.getState = this.getState.bind(this);
@@ -85,13 +93,38 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         const cursor = state.selection.$cursor;
 
         if (cursor) {
-            const path = cursor.path.filter(x => x.type).map(x => x.type.name);
-            formatting.block = path[path.length - 1];
-            formatting.orderedList = path.contains("ordered_list");
-            formatting.bulletedList = path.contains("bulleted_list");
+            const path = cursor.path.filter(x => x.type);
+            const currentBlock = path[path.length - 1];
+            const blockType = currentBlock.type;
+            const typeName = blockType.name;
+
+            formatting.block = typeName[typeName.length - 1];
+            formatting.orderedList = typeName.contains("ordered_list");
+            formatting.bulletedList = typeName.contains("bulleted_list");
             formatting.italic = state.doc.rangeHasMark(from, to, this.schema.marks.italic);
             formatting.underlined = state.doc.rangeHasMark(from, to, this.schema.marks.underlined);
             formatting.bold = state.doc.rangeHasMark(from, to, this.schema.marks.bold);
+
+            if (currentBlock.attrs && currentBlock.attrs.styles && currentBlock.attrs.styles.alignment) {
+                const alignmentStyleKey = currentBlock.attrs.styles.alignment[this.viewManager.getViewport()];
+
+                switch (alignmentStyleKey) {
+                    case alignmentStyleKeys.left:
+                        formatting.alignment = "left";
+                        break;
+                    case alignmentStyleKeys.center:
+                        formatting.alignment = "center";
+                        break;
+                    case alignmentStyleKeys.right:
+                        formatting.alignment = "right";
+                        break;
+                    case alignmentStyleKeys.justify:
+                        formatting.alignment = "justify";
+                        break;
+                    default:
+                    // alignment not set. TODO: Take from lower viewports
+                }
+            }
         }
 
         return formatting;
@@ -314,19 +347,19 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public alignLeft(viewport: string = "xs"): void {
-        this.setAlignment("utils/text/alignLeft", viewport);
+        this.setAlignment(alignmentStyleKeys.left, viewport);
     }
 
     public alignCenter(viewport: string = "xs"): void {
-        this.setAlignment("utils/text/alignCenter", viewport);
+        this.setAlignment(alignmentStyleKeys.center, viewport);
     }
 
     public alignRight(viewport: string = "xs"): void {
-        this.setAlignment("utils/text/alignRight", viewport);
+        this.setAlignment(alignmentStyleKeys.right, viewport);
     }
 
     public justify(viewport: string = "xs"): void {
-        this.setAlignment("utils/text/justify", viewport);
+        this.setAlignment(alignmentStyleKeys.justify, viewport);
     }
 
     public setCaretAtEndOf(node: Node): void {
@@ -344,7 +377,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         // this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
     }
 
-    private handleUpdates(view, prevState) {
+    private handleUpdates(view, prevState): void {
         this.eventManager.dispatchEvent("htmlEditorChanged", this);
 
         const state = view.state;
