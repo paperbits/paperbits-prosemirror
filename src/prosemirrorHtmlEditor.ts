@@ -103,6 +103,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             formatting.bulletedList = typeName.contains("bulleted_list");
             formatting.italic = state.doc.rangeHasMark(from, to, this.schema.marks.italic);
             formatting.underlined = state.doc.rangeHasMark(from, to, this.schema.marks.underlined);
+            formatting.highlighted = state.doc.rangeHasMark(from, to, this.schema.marks.highlighted);
             formatting.bold = state.doc.rangeHasMark(from, to, this.schema.marks.bold);
 
             if (currentBlock.attrs && currentBlock.attrs.styles && currentBlock.attrs.styles.alignment) {
@@ -193,6 +194,11 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     public toggleUnderlined(): void {
         toggleMark(this.schema.marks.underlined)(this.editorView.state, this.editorView.dispatch);
+        this.editorView.focus();
+    }
+
+    public toggleHighlighted(): void {
+        toggleMark(this.schema.marks.highlighted)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
     }
 

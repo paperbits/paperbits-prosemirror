@@ -123,6 +123,10 @@ export class SchemaBuilder {
                 toDOM: () => { return ["u"]; },
                 parseDOM: [{ tag: "u" }]
             },
+            highlighted: {
+                toDOM: () => { return ["mark"]; },
+                parseDOM: [{ tag: "mark" }]
+            },
             hyperlink: {
                 attrs: {
                     href: {},
