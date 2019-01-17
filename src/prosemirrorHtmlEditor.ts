@@ -23,9 +23,7 @@ const alignmentStyleKeys = {
 
 
 export class ProseMirrorHtmlEditor implements IHtmlEditor {
-    private host: HTMLElement;
     private editorView: EditorView;
-    private blockNodes = ["H1", "H2", "H3", "H4", "H5", "H6", "P", "OL", "UL", "LI"];
     private schema: Schema;
     private content: any;
 
@@ -102,9 +100,9 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             formatting.orderedList = typeName.contains("ordered_list");
             formatting.bulletedList = typeName.contains("bulleted_list");
             formatting.italic = state.doc.rangeHasMark(from, to, this.schema.marks.italic);
+            formatting.bold = state.doc.rangeHasMark(from, to, this.schema.marks.bold);
             formatting.underlined = state.doc.rangeHasMark(from, to, this.schema.marks.underlined);
             formatting.highlighted = state.doc.rangeHasMark(from, to, this.schema.marks.highlighted);
-            formatting.bold = state.doc.rangeHasMark(from, to, this.schema.marks.bold);
 
             if (currentBlock.attrs && currentBlock.attrs.styles && currentBlock.attrs.styles.alignment) {
                 const alignmentStyleKey = currentBlock.attrs.styles.alignment[this.viewManager.getViewport()];
@@ -185,6 +183,36 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     public toggleBold(): void {
         toggleMark(this.schema.marks.bold)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
+    }
+
+    public setColor(colorKey: string): void {
+        const state = this.editorView.state;
+        const { doc, selection } = this.editorView.state;
+
+        if (selection.empty) {
+            return;
+        }
+
+        let attrs: any = null;
+
+        if (!doc.rangeHasMark(selection.from, selection.to, this.schema.marks.color)) {
+            attrs = {
+                colorKey: colorKey
+            };
+        }
+
+        return toggleMark(this.schema.marks.color, attrs)(state, this.editorView.dispatch);
+    }
+
+    public removeColor(): void {
+        const state = this.editorView.state;
+        const colorMark = state.selection.$from.marks().find(x => x.type.name === "color");
+
+        if (!colorMark) {
+            return;
+        }
+
+        this.editorView.dispatch(state.tr.removeMark(state.selection.from, state.selection.to, this.schema.marks.color));
     }
 
     public toggleItalic(): void {
@@ -402,8 +430,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             this.editorView.dom.contentEditable = true;
             return;
         }
-
-        this.host = element;
 
         const doc: any = this.schema.nodeFromJSON(this.content.doc);
         const histKeymap = keymap({ "Mod-z": undo, "Mod-y": redo });

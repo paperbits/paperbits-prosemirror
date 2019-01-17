@@ -127,6 +127,15 @@ export class SchemaBuilder {
                 toDOM: () => { return ["mark"]; },
                 parseDOM: [{ tag: "mark" }]
             },
+            color: {
+                attrs: {
+                    colorKey: {},
+                },
+                toDOM: (node) => {
+                    const className = this.styleService.getClassNameByColorKey(node.attrs.colorKey);
+                    return ["span", { class: className }];
+                }
+            },
             hyperlink: {
                 attrs: {
                     href: {},
