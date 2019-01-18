@@ -30,7 +30,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     constructor(
         readonly eventManager: IEventManager,
         readonly styleService: IStyleService,
-        readonly viewManager: IViewManager
+        // readonly viewManager: IViewManager
     ) {
         // rebinding...
         this.getState = this.getState.bind(this);
@@ -104,26 +104,26 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             formatting.underlined = state.doc.rangeHasMark(from, to, this.schema.marks.underlined);
             formatting.highlighted = state.doc.rangeHasMark(from, to, this.schema.marks.highlighted);
 
-            if (currentBlock.attrs && currentBlock.attrs.styles && currentBlock.attrs.styles.alignment) {
-                const alignmentStyleKey = currentBlock.attrs.styles.alignment[this.viewManager.getViewport()];
+            // if (currentBlock.attrs && currentBlock.attrs.styles && currentBlock.attrs.styles.alignment) {
+            //     const alignmentStyleKey = currentBlock.attrs.styles.alignment[this.viewManager.getViewport()];
 
-                switch (alignmentStyleKey) {
-                    case alignmentStyleKeys.left:
-                        formatting.alignment = "left";
-                        break;
-                    case alignmentStyleKeys.center:
-                        formatting.alignment = "center";
-                        break;
-                    case alignmentStyleKeys.right:
-                        formatting.alignment = "right";
-                        break;
-                    case alignmentStyleKeys.justify:
-                        formatting.alignment = "justify";
-                        break;
-                    default:
-                    // alignment not set. TODO: Take from lower viewports
-                }
-            }
+            //     switch (alignmentStyleKey) {
+            //         case alignmentStyleKeys.left:
+            //             formatting.alignment = "left";
+            //             break;
+            //         case alignmentStyleKeys.center:
+            //             formatting.alignment = "center";
+            //             break;
+            //         case alignmentStyleKeys.right:
+            //             formatting.alignment = "right";
+            //             break;
+            //         case alignmentStyleKeys.justify:
+            //             formatting.alignment = "justify";
+            //             break;
+            //         default:
+            //         // alignment not set. TODO: Take from lower viewports
+            //     }
+            // }
         }
 
         return formatting;
