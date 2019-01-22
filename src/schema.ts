@@ -1,8 +1,8 @@
 import { Schema } from "prosemirror-model";
-import { IStyleService } from "@paperbits/common/styles";
+import { IStyleCompiler } from "@paperbits/common/styles";
 
 export class SchemaBuilder {
-    constructor(private readonly styleService: IStyleService) {
+    constructor(private readonly styleCompiler: IStyleCompiler) {
     }
 
     private setupBlock(tag: string) {
@@ -15,7 +15,7 @@ export class SchemaBuilder {
             },
             toDOM: (node) => {
                 if (node.attrs.styles) {
-                    const className = this.styleService.getClassNamesByStyleConfig(node.attrs.styles);
+                    const className = this.styleCompiler.getClassNamesByStyleConfig(node.attrs.styles);
                     return [tag, { class: className }, 0];
                 }
                 return [tag, 0];
@@ -132,7 +132,7 @@ export class SchemaBuilder {
                     colorKey: {},
                 },
                 toDOM: (node) => {
-                    const className = this.styleService.getClassNameByColorKey(node.attrs.colorKey);
+                    const className = this.styleCompiler.getClassNameByColorKey(node.attrs.colorKey);
                     return ["span", { class: className }];
                 }
             },

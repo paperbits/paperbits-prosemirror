@@ -1,5 +1,5 @@
 ﻿import { IEventManager } from "@paperbits/common/events";
-import { IStyleService } from "@paperbits/common/styles";
+import { IStyleCompiler } from "@paperbits/common/styles";
 import { IHtmlEditor, SelectionState, HtmlEditorEvents, HyperlinkContract } from "@paperbits/common/editing";
 import { Schema, DOMParser } from "prosemirror-model";
 import { EditorState, Plugin } from "prosemirror-state";
@@ -12,7 +12,6 @@ import { wrapInList } from "./lists";
 import { buildKeymap } from "./keymap";
 import { SchemaBuilder } from "./schema";
 import { HyperlinkModel } from "@paperbits/common/permalinks";
-import { IViewManager } from "@paperbits/common/ui";
 
 const alignmentStyleKeys = {
     left: "utils/text/alignLeft",
@@ -29,7 +28,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     constructor(
         readonly eventManager: IEventManager,
-        readonly styleService: IStyleService,
+        readonly styleCompiler: IStyleCompiler,
         // readonly viewManager: IViewManager
     ) {
         // rebinding...
@@ -54,7 +53,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         // setting up...
         this.eventManager.addEventListener("onEscape", this.detachFromElement);
 
-        const builder = new SchemaBuilder(this.styleService);
+        const builder = new SchemaBuilder(this.styleCompiler);
         this.schema = builder.build();
     }
 
@@ -144,7 +143,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             startIndex--;
         }
         while (endIndex < $cursor.parent.childCount && hasMark(endIndex)) {
-            endIndex++
+            endIndex++;
         }
 
         let startPos = $cursor.start();
@@ -206,13 +205,8 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     public removeColor(): void {
         const state = this.editorView.state;
-        const colorMark = state.selection.$from.marks().find(x => x.type.name === "color");
-
-        if (!colorMark) {
-            return;
-        }
-
         this.editorView.dispatch(state.tr.removeMark(state.selection.from, state.selection.to, this.schema.marks.color));
+        this.editorView.focus();
     }
 
     public toggleItalic(): void {
