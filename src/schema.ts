@@ -1,24 +1,29 @@
 import { Schema } from "prosemirror-model";
+import * as Utils from "@paperbits/common/utils";
 import { IStyleCompiler } from "@paperbits/common/styles";
 
 export class SchemaBuilder {
     constructor(private readonly styleCompiler: IStyleCompiler) {
     }
 
-    private setupBlock(tag: string) {
+    private setupBlock(tag: string, setId = false) {
         return {
             group: "block",
             content: "inline*",
             attrs: {
-                styles: { default: null }
-                // anchor: { default: null }
+                styles: { default: null },
+                setId: { default: setId }
             },
             toDOM: (node) => {
+                const result = [tag, {}, 0];
                 if (node.attrs.styles) {
                     const className = this.styleCompiler.getClassNamesByStyleConfig(node.attrs.styles);
-                    return [tag, { class: className }, 0];
+                    result[1] = { class: className };
                 }
-                return [tag, 0];
+                if (node.attrs.setId) {
+                    result[1]["id"] = node.textContent ? Utils.slugify(node.textContent) : Utils.identifier();
+                }
+                return result;
             },
             parseDOM: [{ tag: tag }]
         };
@@ -75,12 +80,12 @@ export class SchemaBuilder {
                 },
                 defining: true
             },
-            heading1: this.setupBlock("h1"),
-            heading2: this.setupBlock("h2"),
-            heading3: this.setupBlock("h3"),
-            heading4: this.setupBlock("h4"),
-            heading5: this.setupBlock("h5"),
-            heading6: this.setupBlock("h6"),
+            heading1: this.setupBlock("h1", true),
+            heading2: this.setupBlock("h2", true),
+            heading3: this.setupBlock("h3", true),
+            heading4: this.setupBlock("h4", true),
+            heading5: this.setupBlock("h5", true),
+            heading6: this.setupBlock("h6", true),
             quote: this.setupBlock("blockquote"),
             link: {
                 content: "inline*",
