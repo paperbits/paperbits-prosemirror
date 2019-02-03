@@ -1,6 +1,6 @@
 ﻿import { IEventManager } from "@paperbits/common/events";
 import { IStyleCompiler } from "@paperbits/common/styles";
-import { IHtmlEditor, SelectionState, HtmlEditorEvents, HyperlinkContract } from "@paperbits/common/editing";
+import { IHtmlEditor, SelectionState, alignmentStyleKeys, HtmlEditorEvents, HyperlinkContract } from "@paperbits/common/editing";
 import { Schema, DOMParser } from "prosemirror-model";
 import { EditorState, Plugin } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
@@ -13,13 +13,6 @@ import { buildKeymap } from "./keymap";
 import { SchemaBuilder } from "./schema";
 import { HyperlinkModel } from "@paperbits/common/permalinks";
 
-const alignmentStyleKeys = {
-    left: "utils/text/alignLeft",
-    center: "utils/text/alignCenter",
-    right: "utils/text/alignRight",
-    justify: "utils/text/justify"
-};
-
 
 export class ProseMirrorHtmlEditor implements IHtmlEditor {
     private editorView: EditorView;
@@ -28,8 +21,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     constructor(
         readonly eventManager: IEventManager,
-        readonly styleCompiler: IStyleCompiler,
-        // readonly viewManager: IViewManager
+        readonly styleCompiler: IStyleCompiler
     ) {
         // rebinding...
         this.getState = this.getState.bind(this);
@@ -85,7 +77,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             from -= 1;
         }
 
-        const formatting = new SelectionState();
+        const selectionState = new SelectionState();
 
         const cursor = state.selection.$cursor;
 
@@ -95,37 +87,20 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             const blockType = currentBlock.type;
             const typeName = blockType.name;
 
-            formatting.block = typeName[typeName.length - 1];
-            formatting.orderedList = typeName.contains("ordered_list");
-            formatting.bulletedList = typeName.contains("bulleted_list");
-            formatting.italic = state.doc.rangeHasMark(from, to, this.schema.marks.italic);
-            formatting.bold = state.doc.rangeHasMark(from, to, this.schema.marks.bold);
-            formatting.underlined = state.doc.rangeHasMark(from, to, this.schema.marks.underlined);
-            formatting.highlighted = state.doc.rangeHasMark(from, to, this.schema.marks.highlighted);
+            selectionState.block = typeName[typeName.length - 1];
+            selectionState.orderedList = typeName.contains("ordered_list");
+            selectionState.bulletedList = typeName.contains("bulleted_list");
+            selectionState.italic = state.doc.rangeHasMark(from, to, this.schema.marks.italic);
+            selectionState.bold = state.doc.rangeHasMark(from, to, this.schema.marks.bold);
+            selectionState.underlined = state.doc.rangeHasMark(from, to, this.schema.marks.underlined);
+            selectionState.highlighted = state.doc.rangeHasMark(from, to, this.schema.marks.highlighted);
 
-            // if (currentBlock.attrs && currentBlock.attrs.styles && currentBlock.attrs.styles.alignment) {
-            //     const alignmentStyleKey = currentBlock.attrs.styles.alignment[this.viewManager.getViewport()];
-
-            //     switch (alignmentStyleKey) {
-            //         case alignmentStyleKeys.left:
-            //             formatting.alignment = "left";
-            //             break;
-            //         case alignmentStyleKeys.center:
-            //             formatting.alignment = "center";
-            //             break;
-            //         case alignmentStyleKeys.right:
-            //             formatting.alignment = "right";
-            //             break;
-            //         case alignmentStyleKeys.justify:
-            //             formatting.alignment = "justify";
-            //             break;
-            //         default:
-            //         // alignment not set. TODO: Take from lower viewports
-            //     }
-            // }
+            if (currentBlock.attrs && currentBlock.attrs.styles && currentBlock.attrs.styles.alignment) {
+                selectionState.alignment = currentBlock.attrs.styles.alignment;
+            }
         }
 
-        return formatting;
+        return selectionState;
     }
 
     private markExtend($cursor, markType) {
