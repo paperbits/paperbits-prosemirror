@@ -1,7 +1,7 @@
 ﻿import { IEventManager } from "@paperbits/common/events";
 import { IStyleCompiler } from "@paperbits/common/styles";
 import { IHtmlEditor, SelectionState, alignmentStyleKeys, HtmlEditorEvents, HyperlinkContract } from "@paperbits/common/editing";
-import { Schema, DOMParser } from "prosemirror-model";
+import { Schema, DOMParser, DOMSerializer, NodeType } from "prosemirror-model";
 import { EditorState, Plugin } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { baseKeymap, toggleMark, setBlockType, wrapIn, chainCommands, exitCode } from "prosemirror-commands";
@@ -15,9 +15,11 @@ import { HyperlinkModel } from "@paperbits/common/permalinks";
 
 
 export class ProseMirrorHtmlEditor implements IHtmlEditor {
+    private element: Element;
     private editorView: EditorView;
     private schema: Schema;
     private content: any;
+    private node: any;
 
     constructor(
         readonly eventManager: IEventManager,
@@ -65,6 +67,14 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
                 head: 1
             }
         };
+
+        this.node = this.schema.nodeFromJSON(this.content.doc);
+
+        const fragment = DOMSerializer
+            .fromSchema(this.schema)
+            .serializeFragment(this.node);
+
+        this.element.appendChild(fragment);
     }
 
     public getSelectionState(): SelectionState {
@@ -394,9 +404,10 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         }
     }
 
-    public attachToElement(element: HTMLElement): void {
+    public enable(): void {
         if (this.editorView) {
             this.editorView.dom.contentEditable = true;
+            this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
             return;
         }
 
@@ -408,19 +419,20 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
                 return true;
             })
         });
-        const hu = this.handleUpdates;
+        
+        const handleUpdates = this.handleUpdates;
 
         const detectChangesPlugin = new Plugin({
             view(view) {
                 return {
-                    update: hu
+                    update: handleUpdates
                 };
             }
         });
 
         const plugins = [detectChangesPlugin];
 
-        this.editorView = new EditorView(element, {
+        this.editorView = new EditorView({ mount: this.element }, {
             state: EditorState.create({
                 doc,
                 plugins: plugins.concat([
@@ -432,15 +444,22 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             })
         });
 
-        this.editorView.dom.contentEditable = false;
-
         this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
     }
 
-    public detachFromElement(): void {
-        if (this.editorView) {
-            this.editorView.dom.contentEditable = false;
+    public disable(): void {
+        if (!this.editorView) {
+            return;
         }
+        this.editorView.dom.contentEditable = false;
+    }
+
+    public attachToElement(element: HTMLElement): void {
+        this.element = element;
+    }
+
+    public detachFromElement(): void {
+        this.disable();
     }
 
     public addSelectionChangeListener(callback: () => void): void {
