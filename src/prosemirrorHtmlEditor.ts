@@ -52,7 +52,11 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public getState(): Object {
-        return this.editorView.state.toJSON()["doc"]["content"];
+        if (this.editorView) {
+            return this.editorView.state.toJSON()["doc"]["content"];
+        }
+
+        return this.content.doc.content;
     }
 
     public setState(content: Object): void {
@@ -419,7 +423,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
                 return true;
             })
         });
-        
+
         const handleUpdates = this.handleUpdates;
 
         const detectChangesPlugin = new Plugin({
