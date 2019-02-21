@@ -358,7 +358,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
         Object.assign(blockStyle.alignment, { [viewport]: styleKey });
 
-        setBlockType(this.schema.nodes.tmp)(this.editorView.state, this.editorView.dispatch);
+        setBlockType(this.schema.nodes.paragraph)(this.editorView.state, this.editorView.dispatch);
         setBlockType(blockType, { styles: blockStyle })(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
     }
