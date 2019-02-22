@@ -34,12 +34,6 @@ export class SchemaBuilder {
             text: {
                 group: "inline",
             },
-            tmp: {
-                group: "block",
-                content: "inline*",
-                toDOM: () => ["tmp", 0],
-                parseDOM: [{ tag: "tmp" }]
-            },
             linebreak: {
                 group: "block",
                 content: "",
