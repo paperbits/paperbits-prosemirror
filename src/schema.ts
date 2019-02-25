@@ -34,12 +34,6 @@ export class SchemaBuilder {
             text: {
                 group: "inline",
             },
-            linebreak: {
-                group: "block",
-                content: "",
-                toDOM: () => ["br", 0],
-                parseDOM: [{ tag: "br" }]
-            },
             paragraph: this.setupBlock("p"),
             formatted: this.setupBlock("pre"),
             ordered_list: {
@@ -81,22 +75,6 @@ export class SchemaBuilder {
             heading5: this.setupBlock("h5", true),
             heading6: this.setupBlock("h6", true),
             quote: this.setupBlock("blockquote"),
-            link: {
-                content: "inline*",
-                attrs: {
-                    href: { default: null },
-                    contentTypeKey: { default: null },
-                    target: { default: null }
-                },
-                toDOM: (node) => {
-                    return ["a", { href: node.attrs.href }];
-                },
-                parseDOM: [{
-                    tag: "a",
-                    getAttrs: (dom) => { return { href: dom.href }; }
-                }],
-                inclusive: false
-            },
             hard_break: {
                 inline: true,
                 group: "inline",

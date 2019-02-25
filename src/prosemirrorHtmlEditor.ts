@@ -416,13 +416,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         }
 
         const doc: any = this.schema.nodeFromJSON(this.content.doc);
-        const histKeymap = keymap({ "Mod-z": undo, "Mod-y": redo });
-        const otherKeymap = keymap({
-            "Ctrl-Enter": chainCommands(exitCode, (state, dispatch) => {
-                dispatch(state.tr.replaceSelectionWith(this.schema.nodes.hard_break.create()).scrollIntoView());
-                return true;
-            })
-        });
 
         const handleUpdates = this.handleUpdates;
 
@@ -440,8 +433,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             state: EditorState.create({
                 doc,
                 plugins: plugins.concat([
-                    histKeymap,
-                    otherKeymap,
                     keymap(buildKeymap(this.schema, null)),
                     keymap(baseKeymap),
                     history()])

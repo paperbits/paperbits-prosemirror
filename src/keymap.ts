@@ -84,12 +84,24 @@ export function buildKeymap(schema, mapKeys) {
 
     if (type = schema.nodes.hard_break) {
         let br = type, cmd = chainCommands(exitCode, (state, dispatch) => {
-            dispatch(state.tr.replaceSelectionWith(br.create()).scrollIntoView());
+            let {$cursor} = state.selection;
+
+            if (!$cursor) {
+                return;
+            }
+
+            if ($cursor.nodeBefore && $cursor.nodeBefore.type.name === "hard_break") {
+                dispatch(state.tr.delete($cursor.pos-1, $cursor.pos)
+                                 .replaceSelectionWith(schema.nodes.paragraph.create()).scrollIntoView());
+            } else {
+                dispatch(state.tr.replaceSelectionWith(br.create()).scrollIntoView());
+            }
+
             return true;
         });
         bind("Mod-Enter", cmd);
         bind("Shift-Enter", cmd);
-        if (mac) { bind("Ctrl-Enter", cmd); }
+        bind("Ctrl-Enter", cmd);
     }
 
     if (type = schema.nodes.list_item) {
