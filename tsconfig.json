@@ -2,9 +2,8 @@
     "compilerOptions": {
         "target": "es5",
         "lib": [
-            "es2015",
-            "es6",
-            "dom"
+            "dom",
+            "es2018"
         ],
         "module": "commonjs",
         "moduleResolution": "node",
