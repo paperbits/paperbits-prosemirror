@@ -40,7 +40,7 @@ export function buildKeymap(schema, mapKeys) {
     let keys = {}, type;
     function bind(key, cmd) {
         if (mapKeys) {
-            let mapped = mapKeys[key];
+            const mapped = mapKeys[key];
             if (mapped === false) { return; }
             if (mapped) { key = mapped; }
         }
@@ -82,17 +82,17 @@ export function buildKeymap(schema, mapKeys) {
         bind("Ctrl->", wrapIn(type));
     }
 
-    if (type = schema.nodes.hard_break) {
-        let br = type, cmd = chainCommands(exitCode, (state, dispatch) => {
-            let {$cursor} = state.selection;
+    if (type = schema.nodes.break) {
+        const br = type, cmd = chainCommands(exitCode, (state, dispatch) => {
+            const { $cursor } = state.selection;
 
             if (!$cursor) {
                 return;
             }
 
-            if ($cursor.nodeBefore && $cursor.nodeBefore.type.name === "hard_break") {
-                dispatch(state.tr.delete($cursor.pos-1, $cursor.pos)
-                                 .replaceSelectionWith(schema.nodes.paragraph.create()).scrollIntoView());
+            if ($cursor.nodeBefore && $cursor.nodeBefore.type.name === "break") {
+                dispatch(state.tr.delete($cursor.pos - 1, $cursor.pos)
+                    .replaceSelectionWith(schema.nodes.paragraph.create()).scrollIntoView());
             } else {
                 dispatch(state.tr.replaceSelectionWith(br.create()).scrollIntoView());
             }
@@ -123,7 +123,7 @@ export function buildKeymap(schema, mapKeys) {
     }
 
     if (type = schema.nodes.horizontal_rule) {
-        let hr = type;
+        const hr = type;
 
         bind("Mod-_", (state, dispatch) => {
             dispatch(state.tr.replaceSelectionWith(hr.create()).scrollIntoView());

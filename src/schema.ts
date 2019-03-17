@@ -1,32 +1,45 @@
 import { Schema } from "prosemirror-model";
 import * as Utils from "@paperbits/common/utils";
-import { IStyleCompiler } from "@paperbits/common/styles";
 
 export class SchemaBuilder {
-    constructor(private readonly styleCompiler: IStyleCompiler) {
-    }
-
-    private setupBlock(tag: string, setId = false) {
+    private setupBlock(tag: string) {
         return {
             group: "block",
             content: "inline*",
             attrs: {
-                styles: { default: null },
-                setId: { default: setId }
+                className: { default: null },
+                styles: { default: null }
             },
             toDOM: (node) => {
                 const result = [tag, {}, 0];
-                if (node.attrs.styles) {
-                    const className = this.styleCompiler.getClassNamesByStyleConfig(node.attrs.styles);
-                    result[1] = { class: className };
-                }
-                if (node.attrs.setId) {
-                    result[1]["id"] = node.textContent ? Utils.slugify(node.textContent) : Utils.identifier();
+                if (node.attrs.className) {
+                    result[1] = { class: node.attrs.className };
                 }
                 return result;
             },
             parseDOM: [{ tag: tag }]
         };
+    }
+
+    private setupHeading(tag: "h1" | "h2" | "h3" | "h4" | "h5" | "h6") {
+        const block = this.setupBlock(tag);
+        block.attrs["id"] = { default: Utils.identifier() };
+        block.toDOM = (node) => {
+            const result = [tag, {}, 0];
+            if (node.attrs.className) {
+                result[1] = { class: node.attrs.className };
+            }
+            result[1]["id"] = node.attrs.id || Utils.identifier();
+            return result;
+        },
+        block.parseDOM = <any>[{ 
+            tag: tag,
+            getAttrs: (dom) => {
+                return { id: dom.hasAttribute("id") ? dom.getAttribute("id") : Utils.identifier() };
+            }
+        }];
+
+        return block;
     }
 
     public build(): Schema {
@@ -68,14 +81,14 @@ export class SchemaBuilder {
                 },
                 defining: true
             },
-            heading1: this.setupBlock("h1", true),
-            heading2: this.setupBlock("h2", true),
-            heading3: this.setupBlock("h3", true),
-            heading4: this.setupBlock("h4", true),
-            heading5: this.setupBlock("h5", true),
-            heading6: this.setupBlock("h6", true),
+            heading1: this.setupHeading("h1"),
+            heading2: this.setupHeading("h2"),
+            heading3: this.setupHeading("h3"),
+            heading4: this.setupHeading("h4"),
+            heading5: this.setupHeading("h5"),
+            heading6: this.setupHeading("h6"),
             quote: this.setupBlock("blockquote"),
-            hard_break: {
+            break: {
                 inline: true,
                 group: "inline",
                 selectable: false,
@@ -107,20 +120,21 @@ export class SchemaBuilder {
             color: {
                 attrs: {
                     colorKey: {},
+                    colorClass: {},
                 },
-                toDOM: (node) => {
-                    const className = this.styleCompiler.getClassNameByColorKey(node.attrs.colorKey);
-                    return ["span", { class: className }];
+                toDOM: (node) => {                    
+                    return ["span", { class: node.attrs.colorClass }];
                 }
             },
             hyperlink: {
                 attrs: {
                     href: {},
-                    contentTypeKey: {},
+                    anchor: { default: undefined },
+                    targetKey: {},
                     target: {}
                 },
                 toDOM: (node) => {
-                    return ["a", { href: node.attrs.href }];
+                    return ["a", { href: `${node.attrs.href}${node.attrs.anchor ? "#" + node.attrs.anchor : ""}` }];
                 },
                 parseDOM: [{
                     tag: "a",

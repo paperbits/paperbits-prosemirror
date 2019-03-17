@@ -1,18 +1,16 @@
 ﻿import { IEventManager } from "@paperbits/common/events";
 import { IStyleCompiler } from "@paperbits/common/styles";
-import { IHtmlEditor, SelectionState, alignmentStyleKeys, HtmlEditorEvents, HyperlinkContract } from "@paperbits/common/editing";
-import { Schema, DOMParser, DOMSerializer, NodeType } from "prosemirror-model";
+import { HyperlinkModel } from "@paperbits/common/permalinks";
+import { IHtmlEditor, SelectionState, alignmentStyleKeys, HtmlEditorEvents } from "@paperbits/common/editing";
+import { Schema, DOMSerializer } from "prosemirror-model";
 import { EditorState, Plugin } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
-import { baseKeymap, toggleMark, setBlockType, wrapIn, chainCommands, exitCode } from "prosemirror-commands";
-import { history, undo, redo } from "prosemirror-history";
-import { findWrapping, Transform } from "prosemirror-transform";
+import { baseKeymap, toggleMark, setBlockType } from "prosemirror-commands";
+import { history } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
 import { wrapInList } from "./lists";
 import { buildKeymap } from "./keymap";
 import { SchemaBuilder } from "./schema";
-import { HyperlinkModel } from "@paperbits/common/permalinks";
-
 
 export class ProseMirrorHtmlEditor implements IHtmlEditor {
     private element: Element;
@@ -25,54 +23,57 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         readonly eventManager: IEventManager,
         readonly styleCompiler: IStyleCompiler
     ) {
-        // rebinding...
-        this.getState = this.getState.bind(this);
-        this.insertText = this.insertText.bind(this);
-        this.toggleBold = this.toggleBold.bind(this);
-        this.toggleItalic = this.toggleItalic.bind(this);
-        this.toggleUnderlined = this.toggleUnderlined.bind(this);
-        this.toggleUnorderedList = this.toggleUnorderedList.bind(this);
-        this.toggleOrderedList = this.toggleOrderedList.bind(this);
-        this.toggleParagraph = this.toggleParagraph.bind(this);
-        this.toggleH1 = this.toggleH1.bind(this);
-        this.toggleH2 = this.toggleH2.bind(this);
-        this.toggleH3 = this.toggleH3.bind(this);
-        this.toggleH4 = this.toggleH4.bind(this);
-        this.toggleH5 = this.toggleH5.bind(this);
-        this.toggleH6 = this.toggleH6.bind(this);
-        this.toggleFormatted = this.toggleFormatted.bind(this);
-        this.detachFromElement = this.detachFromElement.bind(this);
-        this.handleUpdates = this.handleUpdates.bind(this);
-
         // setting up...
-        this.eventManager.addEventListener("onEscape", this.detachFromElement);
+        this.eventManager.addEventListener("onEscape", this.detachFromElement.bind(this));
 
-        const builder = new SchemaBuilder(this.styleCompiler);
+        const builder = new SchemaBuilder();
         this.schema = builder.build();
     }
 
     public getState(): Object {
+        let content;
+
         if (this.editorView) {
-            return this.editorView.state.toJSON()["doc"]["content"];
+            content = this.editorView.state.toJSON()["doc"]["content"];
+        }
+        else {
+            content = this.content.content;
         }
 
-        return this.content.doc.content;
+        return this.proseMirrorModelToModel(content);
+    }
+
+    private modelToProseMirrorModel(source: any): any {
+        let result = JSON.stringify(source);
+
+        result = result
+            .replaceAll(`ordered-list`, `ordered_list`)
+            .replaceAll(`bulleted-list`, `bulleted_list`)
+            .replaceAll(`list-item`, `list_item`);
+
+        return JSON.parse(result);
+    }
+
+    private proseMirrorModelToModel(source: any): any {
+        let result = JSON.stringify(source);
+
+        result = result
+            .replaceAll(`ordered_list`, `ordered-list`)
+            .replaceAll(`bulleted_list`, `bulleted-list`)
+            .replaceAll(`list_item`, `list-item`);
+
+        return JSON.parse(result);
     }
 
     public setState(content: Object): void {
+        content = this.modelToProseMirrorModel(content);
+
         this.content = {
-            doc: {
-                type: "doc",
-                content: content
-            },
-            selection: {
-                type: "text",
-                anchor: 1,
-                head: 1
-            }
+            type: "doc",
+            content: content
         };
 
-        this.node = this.schema.nodeFromJSON(this.content.doc);
+        this.node = this.schema.nodeFromJSON(this.content);
 
         const fragment = DOMSerializer
             .fromSchema(this.schema)
@@ -175,27 +176,17 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     public setColor(colorKey: string): void {
         const state = this.editorView.state;
-        const { doc, selection } = this.editorView.state;
-
-        if (selection.empty) {
-            return;
-        }
-
-        let attrs: any = null;
-
-        if (!doc.rangeHasMark(selection.from, selection.to, this.schema.marks.color)) {
-            attrs = {
-                colorKey: colorKey
-            };
-        }
-
-        return toggleMark(this.schema.marks.color, attrs)(state, this.editorView.dispatch);
+        const className = this.styleCompiler.getClassNameByColorKey(colorKey);
+        this.updateMark(state.schema.marks.color, this.schema.marks.color, { colorKey: colorKey, colorClass: className });
     }
 
     public removeColor(): void {
         const state = this.editorView.state;
-        this.editorView.dispatch(state.tr.removeMark(state.selection.from, state.selection.to, this.schema.marks.color));
-        this.editorView.focus();
+        const { doc, selection } = this.editorView.state;
+        if (doc.rangeHasMark(selection.from, selection.to, this.schema.marks.color)) {
+            this.editorView.dispatch(state.tr.removeMark(selection.from, selection.to, this.schema.marks.color));
+            this.editorView.focus();
+        }
     }
 
     public toggleItalic(): void {
@@ -270,7 +261,17 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         // this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
     }
 
-    public setHyperlink(hyperlink: HyperlinkContract): void {
+    public setHyperlink(hyperlink: HyperlinkModel): void {
+        const state = this.editorView.state;
+
+        if (!hyperlink.href && !hyperlink.targetKey) {
+            return;
+        }
+
+        this.updateMark(state.schema.marks.hyperlink, this.schema.marks.hyperlink, hyperlink);
+    }
+
+    private updateMark(mark, markType, markAttrs: Object) {
         const state = this.editorView.state;
 
         const { doc, selection } = this.editorView.state;
@@ -278,22 +279,11 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         if (selection.empty) {
             return;
         }
-
-        if (!hyperlink.href && !hyperlink.targetKey) {
-            return;
+        if (doc.rangeHasMark(selection.from, selection.to, markType)) {
+            state.tr.removeMark(selection.from, selection.to, markType);
         }
-
-        let attrs: any = null;
-
-        if (!doc.rangeHasMark(selection.from, selection.to, this.schema.marks.hyperlink)) {
-            attrs = {
-                href: hyperlink.href,
-                contentTypeKey: hyperlink.targetKey,
-                target: hyperlink.target
-            };
-        }
-
-        return toggleMark(this.schema.marks.hyperlink, attrs)(state, this.editorView.dispatch);
+        const markItem = mark.create(markAttrs);
+        this.editorView.dispatch(state.tr.addMark(selection.from, selection.to, markItem));
     }
 
     public getHyperlink(): HyperlinkModel { // TODO: Move to Selection state
@@ -302,13 +292,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         if (!hyperlinkMark) {
             return null;
         }
-
-        const hyperlink = new HyperlinkModel();
-        hyperlink.href = hyperlinkMark.attrs.href;
-        hyperlink.targetKey = hyperlinkMark.attrs.contentTypeKey;
-        hyperlink.target = hyperlinkMark.attrs.target;
-
-        return hyperlink;
+        return hyperlinkMark.attrs;
     }
 
     public setAnchor(hash: string, anchorKey: string): void {
@@ -342,7 +326,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         throw new Error("Not implemented");
     }
 
-    private setAlignment(styleKey: string, viewport: string = "xs") {
+    private async setAlignment(styleKey: string, viewport: string = "xs") {
         const cursor = this.editorView.state.selection.$cursor;
 
         if (!cursor) {
@@ -358,8 +342,10 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
         Object.assign(blockStyle.alignment, { [viewport]: styleKey });
 
+        const className = await this.styleCompiler.getClassNamesByStyleConfigAsync(blockStyle);
+
         setBlockType(this.schema.nodes.paragraph)(this.editorView.state, this.editorView.dispatch);
-        setBlockType(blockType, { styles: blockStyle })(this.editorView.state, this.editorView.dispatch);
+        setBlockType(blockType, { styles: blockStyle, className: className })(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
     }
 
@@ -415,9 +401,9 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             return;
         }
 
-        const doc: any = this.schema.nodeFromJSON(this.content.doc);
+        const doc: any = this.schema.nodeFromJSON(this.content);
 
-        const handleUpdates = this.handleUpdates;
+        const handleUpdates = this.handleUpdates.bind(this);
 
         const detectChangesPlugin = new Plugin({
             view(view) {
@@ -462,6 +448,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public removeSelectionChangeListener(callback: (htmlEditor: IHtmlEditor) => void): void {
-        // throw "Not implemented";
+        this.eventManager.removeEventListener(HtmlEditorEvents.onSelectionChange, callback);
     }
 }
