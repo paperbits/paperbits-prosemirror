@@ -130,6 +130,7 @@ export class SchemaBuilder {
                 attrs: {
                     href: {},
                     anchor: { default: undefined },
+                    anchorName: { default: undefined },
                     targetKey: {},
                     target: {}
                 },

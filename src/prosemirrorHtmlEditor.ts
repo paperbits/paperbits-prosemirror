@@ -94,7 +94,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
         const selectionState = new SelectionState();
 
-        const cursor = state.selection.$cursor;
+        const cursor = state.selection.$cursor || state.selection.$from;
 
         if (cursor) {
             const path = cursor.path.filter(x => x.type);
@@ -109,6 +109,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             selectionState.bold = state.doc.rangeHasMark(from, to, this.schema.marks.bold);
             selectionState.underlined = state.doc.rangeHasMark(from, to, this.schema.marks.underlined);
             selectionState.highlighted = state.doc.rangeHasMark(from, to, this.schema.marks.highlighted);
+            selectionState.colorKey = this.getColor();
 
             if (currentBlock.attrs && currentBlock.attrs.styles && currentBlock.attrs.styles.alignment) {
                 selectionState.alignment = currentBlock.attrs.styles.alignment;
@@ -116,49 +117,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         }
 
         return selectionState;
-    }
-
-    private markExtend($cursor, markType) {
-        let startIndex = $cursor.index();
-        let endIndex = $cursor.indexAfter();
-
-        const hasMark = (index: number) =>
-            markType.isInSet($cursor.parent.child(index).marks);
-
-        // Clicked outside edge of tag.
-        if (startIndex === $cursor.parent.childCount) {
-            startIndex--;
-        }
-        while (startIndex > 0 && hasMark(startIndex)) {
-            startIndex--;
-        }
-        while (endIndex < $cursor.parent.childCount && hasMark(endIndex)) {
-            endIndex++;
-        }
-
-        let startPos = $cursor.start();
-        let endPos = startPos;
-
-        for (let i = 0; i < endIndex; i++) {
-            const size = $cursor.parent.child(i).nodeSize;
-            if (i < startIndex) startPos += size;
-            endPos += size;
-        }
-
-        return { from: startPos, to: endPos };
-    }
-
-    public removeHyperlink(): void {
-        const state = this.editorView.state;
-        const hyperlinkMark = state.selection.$from.marks().find(x => x.type.name === "hyperlink");
-
-        if (!hyperlinkMark) {
-            return;
-        }
-
-        const extendedSelection = this.markExtend(state.selection.$cursor, this.schema.marks.hyperlink);
-
-        this.editorView.dispatch(state.tr.removeMark(extendedSelection.from, extendedSelection.to, this.schema.marks.hyperlink));
     }
 
     public clearFormatting(): void {
@@ -172,21 +130,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     public toggleBold(): void {
         toggleMark(this.schema.marks.bold)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
-    }
-
-    public setColor(colorKey: string): void {
-        const state = this.editorView.state;
-        const className = this.styleCompiler.getClassNameByColorKey(colorKey);
-        this.updateMark(state.schema.marks.color, this.schema.marks.color, { colorKey: colorKey, colorClass: className });
-    }
-
-    public removeColor(): void {
-        const state = this.editorView.state;
-        const { doc, selection } = this.editorView.state;
-        if (doc.rangeHasMark(selection.from, selection.to, this.schema.marks.color)) {
-            this.editorView.dispatch(state.tr.removeMark(selection.from, selection.to, this.schema.marks.color));
-            this.editorView.focus();
-        }
     }
 
     public toggleItalic(): void {
@@ -261,29 +204,100 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         // this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
     }
 
-    public setHyperlink(hyperlink: HyperlinkModel): void {
+    private updateMark(markType, markAttrs: Object) {
+        if (!markAttrs) {
+            return;
+        }
         const state = this.editorView.state;
+        const tr = state.tr;
+        const doc = tr.doc;
 
-        if (!hyperlink.href && !hyperlink.targetKey) {
+        const markLocation = (!state.selection.empty && state.selection) ||
+                             (state.selection.$cursor && this.getMarkLocation(doc, state.selection.$cursor.pos, markType));
+
+        if (!markLocation) {
             return;
         }
 
-        this.updateMark(state.schema.marks.hyperlink, this.schema.marks.hyperlink, hyperlink);
+        if (state.selection.empty) {
+            if (doc.rangeHasMark(markLocation.from, markLocation.to, markType)) {
+                tr.removeMark(markLocation.from, markLocation.to, markType);
+            } else {
+                return;
+            }
+        }
+        const markItem = markType.create(markAttrs);
+        this.editorView.dispatch(tr.addMark(markLocation.from, markLocation.to, markItem));
     }
 
-    private updateMark(mark, markType, markAttrs: Object) {
+    private removeMark(markType) {
         const state = this.editorView.state;
+        const markLocation = (!state.selection.empty && state.selection) || this.getMarkLocation(state.tr.doc, state.selection.$cursor.pos, markType);
 
-        const { doc, selection } = this.editorView.state;
-
-        if (selection.empty) {
+        if (!markLocation) {
             return;
         }
-        if (doc.rangeHasMark(selection.from, selection.to, markType)) {
-            state.tr.removeMark(selection.from, selection.to, markType);
+
+        this.editorView.dispatch(state.tr.removeMark(markLocation.from, markLocation.to, markType));
+    }
+
+    public setColor(colorKey: string): void {
+        const className = this.styleCompiler.getClassNameByColorKey(colorKey);
+        this.updateMark(this.schema.marks.color, { colorKey: colorKey, colorClass: className });
+    }
+
+    public getColor(): string {
+        const mark = this.editorView.state.selection.$from.marks().find(x => x.type.name === "color");
+
+        if (!mark) {
+            return null;
         }
-        const markItem = mark.create(markAttrs);
-        this.editorView.dispatch(state.tr.addMark(selection.from, selection.to, markItem));
+        return mark.attrs.colorKey;
+    }
+
+    public removeColor(): void {
+        this.removeMark(this.schema.marks.color);
+    }
+
+    public removeHyperlink(): void {
+        this.removeMark(this.schema.marks.hyperlink);
+    }
+
+    public setHyperlink(hyperlink: HyperlinkModel): void {
+        if (!hyperlink.href && !hyperlink.targetKey) {
+            return;
+        }        
+        this.updateMark(this.schema.marks.hyperlink, hyperlink);
+    }
+
+    private getMarkLocation(doc, pos, markType): { from: number, to: number } {
+        const $pos = doc.resolve(pos);
+
+        const start = $pos.parent.childAfter($pos.parentOffset);
+        if (!start.node) {
+            return null;
+        }
+
+        const mark = start.node.marks.find((mark) => mark.type === markType);
+        if (!mark) {
+            return null;
+        }
+
+        let startIndex = $pos.index();
+        let startPos = $pos.start() + start.offset;
+        while (startIndex > 0 && mark.isInSet($pos.parent.child(startIndex - 1).marks)) {
+            startIndex -= 1;
+            startPos -= $pos.parent.child(startIndex).nodeSize;
+        }
+
+        let endIndex = $pos.indexAfter();
+        let endPos = startPos + start.node.nodeSize;
+        while (endIndex < $pos.parent.childCount && mark.isInSet($pos.parent.child(endIndex).marks)) {
+            endPos += $pos.parent.child(endIndex).nodeSize;
+            endIndex += 1;
+        }
+
+        return { from: startPos, to: endPos };
     }
 
     public getHyperlink(): HyperlinkModel { // TODO: Move to Selection state
@@ -327,7 +341,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     private async setAlignment(styleKey: string, viewport: string = "xs") {
-        const cursor = this.editorView.state.selection.$cursor;
+        const cursor = this.editorView.state.selection.$cursor || this.editorView.state.selection.$from;
 
         if (!cursor) {
             return;
@@ -347,6 +361,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         setBlockType(this.schema.nodes.paragraph)(this.editorView.state, this.editorView.dispatch);
         setBlockType(blockType, { styles: blockStyle, className: className })(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
+        this.eventManager.dispatchEvent("onSelectionChange", this);
     }
 
     public alignLeft(viewport: string = "xs"): void {
