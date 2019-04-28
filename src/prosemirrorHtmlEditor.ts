@@ -301,12 +301,26 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public getHyperlink(): HyperlinkModel { // TODO: Move to Selection state
-        const hyperlinkMark = this.editorView.state.selection.$from.marks().find(x => x.type.name === "hyperlink");
+        const doc = this.editorView.state.tr.doc;
+        if (this.editorView.state.selection.$cursor) {
+            const $pos = doc.resolve(this.editorView.state.selection.$cursor.pos);
+            const start = $pos.parent.childAfter($pos.parentOffset);
+            if (!start.node) {
+                return null;
+            }
 
-        if (!hyperlinkMark) {
-            return null;
+            const mark = start.node.marks.find((mark) => mark.type === this.schema.marks.hyperlink);
+            return mark ? mark.attrs : null;
+        } else {
+            const $pos = doc.resolve(this.editorView.state.selection.$from.pos);
+            const start = $pos.parent.childAfter($pos.parentOffset);
+            if (!start.node) {
+                return null;
+            }
+
+            const mark = start.node.marks.find((mark) => mark.type === this.schema.marks.hyperlink);
+            return mark ? mark.attrs : null;
         }
-        return hyperlinkMark.attrs;
     }
 
     public setAnchor(hash: string, anchorKey: string): void {
