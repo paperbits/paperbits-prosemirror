@@ -43,28 +43,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         return this.proseMirrorModelToModel(content);
     }
 
-    private modelToProseMirrorModel(source: any): any {
-        let result = JSON.stringify(source);
-
-        result = result
-            .replaceAll(`ordered-list`, `ordered_list`)
-            .replaceAll(`bulleted-list`, `bulleted_list`)
-            .replaceAll(`list-item`, `list_item`);
-
-        return JSON.parse(result);
-    }
-
-    private proseMirrorModelToModel(source: any): any {
-        let result = JSON.stringify(source);
-
-        result = result
-            .replaceAll(`ordered_list`, `ordered-list`)
-            .replaceAll(`bulleted_list`, `bulleted-list`)
-            .replaceAll(`list_item`, `list-item`);
-
-        return JSON.parse(result);
-    }
-
     public setState(content: Object): void {
         content = this.modelToProseMirrorModel(content);
 
@@ -80,6 +58,30 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             .serializeFragment(this.node);
 
         this.element.appendChild(fragment);
+    }
+
+    private modelToProseMirrorModel(source: any): any {
+        let result = JSON.stringify(source);
+
+        result = result
+            .replaceAll(`ordered-list`, `ordered_list`)
+            .replaceAll(`bulleted-list`, `bulleted_list`)
+            .replaceAll(`list-item`, `list_item`)
+            .replaceAll(`"nodes":`, `"content":`);
+
+        return JSON.parse(result);
+    }
+
+    private proseMirrorModelToModel(source: any): any {
+        let result = JSON.stringify(source);
+
+        result = result
+            .replaceAll(`ordered_list`, `ordered-list`)
+            .replaceAll(`bulleted_list`, `bulleted-list`)
+            .replaceAll(`list_item`, `list-item`)
+            .replaceAll(`"content":`, `"nodes":`);
+
+        return JSON.parse(result);
     }
 
     public getSelectionState(): SelectionState {
@@ -213,7 +215,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         const doc = tr.doc;
 
         const markLocation = (!state.selection.empty && state.selection) ||
-                             (state.selection.$cursor && this.getMarkLocation(doc, state.selection.$cursor.pos, markType));
+            (state.selection.$cursor && this.getMarkLocation(doc, state.selection.$cursor.pos, markType));
 
         if (!markLocation) {
             return;
@@ -266,7 +268,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     public setHyperlink(hyperlink: HyperlinkModel): void {
         if (!hyperlink.href && !hyperlink.targetKey) {
             return;
-        }        
+        }
         this.updateMark(this.schema.marks.hyperlink, hyperlink);
     }
 
