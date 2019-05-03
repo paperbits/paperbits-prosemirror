@@ -1,4 +1,5 @@
-﻿import { IEventManager } from "@paperbits/common/events";
+﻿import { BlockModel } from "@paperbits/common/text/models";
+import { IEventManager } from "@paperbits/common/events";
 import { IStyleCompiler } from "@paperbits/common/styles";
 import { HyperlinkModel } from "@paperbits/common/permalinks";
 import { IHtmlEditor, SelectionState, alignmentStyleKeys, HtmlEditorEvents } from "@paperbits/common/editing";
@@ -30,7 +31,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         this.schema = builder.build();
     }
 
-    public getState(): Object {
+    public getState(): BlockModel[] {
         let content;
 
         if (this.editorView) {
@@ -72,7 +73,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         return JSON.parse(result);
     }
 
-    private proseMirrorModelToModel(source: any): any {
+    private proseMirrorModelToModel(source: any): BlockModel[] {
         let result = JSON.stringify(source);
 
         result = result
