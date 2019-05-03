@@ -44,7 +44,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         return this.proseMirrorModelToModel(content);
     }
 
-    public setState(content: Object): void {
+    public setState(content: BlockModel[]): void {
         content = this.modelToProseMirrorModel(content);
 
         this.content = {
