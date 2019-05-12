@@ -114,8 +114,13 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             selectionState.highlighted = state.doc.rangeHasMark(from, to, this.schema.marks.highlighted);
             selectionState.colorKey = this.getColor();
 
-            if (currentBlock.attrs && currentBlock.attrs.styles && currentBlock.attrs.styles.alignment) {
-                selectionState.alignment = currentBlock.attrs.styles.alignment;
+            if (currentBlock.attrs && currentBlock.attrs.styles) {
+                if (currentBlock.attrs.styles.alignment) {
+                    selectionState.alignment = currentBlock.attrs.styles.alignment;
+                }
+                if (currentBlock.attrs.styles.appearance) {
+                    selectionState.appearance = currentBlock.attrs.styles.appearance;
+                }
             }
         }
 
@@ -161,39 +166,39 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public toggleParagraph(): void {
-        setBlockType(this.schema.nodes.paragraph)(this.editorView.state, this.editorView.dispatch);
+        this.setBlockTypeAndNotify(this.schema.nodes.paragraph);
     }
 
     public toggleH1(): void {
-        setBlockType(this.schema.nodes.heading1)(this.editorView.state, this.editorView.dispatch);
+        this.setBlockTypeAndNotify(this.schema.nodes.heading1);
     }
 
     public toggleH2(): void {
-        setBlockType(this.schema.nodes.heading2)(this.editorView.state, this.editorView.dispatch);
+        this.setBlockTypeAndNotify(this.schema.nodes.heading2);
     }
 
     public toggleH3(): void {
-        setBlockType(this.schema.nodes.heading3)(this.editorView.state, this.editorView.dispatch);
+        this.setBlockTypeAndNotify(this.schema.nodes.heading3);
     }
 
     public toggleH4(): void {
-        setBlockType(this.schema.nodes.heading4)(this.editorView.state, this.editorView.dispatch);
+        this.setBlockTypeAndNotify(this.schema.nodes.heading4);
     }
 
     public toggleH5(): void {
-        setBlockType(this.schema.nodes.heading5)(this.editorView.state, this.editorView.dispatch);
+        this.setBlockTypeAndNotify(this.schema.nodes.heading5);
     }
 
     public toggleH6(): void {
-        setBlockType(this.schema.nodes.heading6)(this.editorView.state, this.editorView.dispatch);
+        this.setBlockTypeAndNotify(this.schema.nodes.heading6);
     }
 
     public toggleQuote(): void {
-        setBlockType(this.schema.nodes.quote)(this.editorView.state, this.editorView.dispatch);
+        this.setBlockTypeAndNotify(this.schema.nodes.quote);
     }
 
     public toggleFormatted(): void {
-        setBlockType(this.schema.nodes.formatted)(this.editorView.state, this.editorView.dispatch);
+        this.setBlockTypeAndNotify(this.schema.nodes.formatted);
     }
 
     public toggleSize(): void {
@@ -357,6 +362,50 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         throw new Error("Not implemented");
     }
 
+    public setTextStyle(textStyleKey: string, viewport?: string) {
+        this.updateTextStyle(textStyleKey, viewport);
+    }
+
+    private async updateTextStyle(textStyleKey: string, viewport: string = "xs") {
+        const cursor = this.editorView.state.selection.$cursor || this.editorView.state.selection.$from;
+
+        if (!cursor) {
+            return;
+        }
+
+        const path = cursor.path.filter(x => x.type);
+        const currentBlock = path[path.length - 1];
+        const blockType = currentBlock.type;
+        const blockStyle = currentBlock.attrs.styles || {};
+
+        blockStyle.appearance = blockStyle.appearance || {};
+        if (textStyleKey) {
+            // Object.assign(blockStyle.appearance, { [viewport]: textStyleKey });
+            blockStyle.appearance = textStyleKey;
+        } else {
+            // if (blockStyle.appearance[viewport]) {
+            //     delete blockStyle.appearance[viewport];
+            //     if (Object.keys(blockStyle.appearance).length === 0) {
+            //         delete blockStyle.appearance;
+            //     }
+            // }
+            if (blockStyle.appearance) {
+                delete blockStyle.appearance;
+            }
+        }
+
+        setBlockType(this.schema.nodes.paragraph)(this.editorView.state, this.editorView.dispatch);
+
+        if (Object.keys(blockStyle).length > 0) {
+            const className = await this.styleCompiler.getClassNamesByStyleConfigAsync(blockStyle);
+            setBlockType(blockType, { styles: blockStyle, className: className })(this.editorView.state, this.editorView.dispatch);
+        } else {
+            setBlockType(blockType)(this.editorView.state, this.editorView.dispatch);
+        }
+        this.editorView.focus();
+        this.eventManager.dispatchEvent("onSelectionChange", this);
+    }
+
     private async setAlignment(styleKey: string, viewport: string = "xs") {
         const cursor = this.editorView.state.selection.$cursor || this.editorView.state.selection.$from;
 
@@ -410,6 +459,11 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         // );
         // Api.editor.selection = Selections.select(Api.editor.selection, boundary, boundary);
         // this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
+    }
+
+    private setBlockTypeAndNotify(blockType, attrs?) {
+        setBlockType(blockType, attrs)(this.editorView.state, this.editorView.dispatch);
+        this.eventManager.dispatchEvent("onSelectionChange", this);
     }
 
     private handleUpdates(view, prevState): void {
