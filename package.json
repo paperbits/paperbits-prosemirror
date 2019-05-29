@@ -1,6 +1,6 @@
 {
     "name": "@paperbits/prosemirror",
-    "version": "0.1.104",
+    "version": "0.1.105",
     "description": "Paperbits HTML editor based on ProseMirror.",
     "author": "Paperbits",
     "license": "MIT",
@@ -16,7 +16,7 @@
         "url": "https://github.com/paperbits/paperbits-prosemirror/issues"
     },
     "dependencies": {
-        "@paperbits/common": "0.1.104",
+        "@paperbits/common": "0.1.105",
         "prosemirror-commands": "^1.0.7",
         "prosemirror-history": "^1.0.3",
         "prosemirror-inputrules": "^1.0.1",
