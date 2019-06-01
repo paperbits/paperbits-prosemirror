@@ -510,7 +510,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
                     history()])
             })
         });
-
+        this.eventManager.dispatchEvent("htmlEditorChanged", this);
         this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
     }
 
