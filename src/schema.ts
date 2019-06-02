@@ -132,10 +132,10 @@ export class SchemaBuilder {
                     anchor: { default: undefined },
                     anchorName: { default: undefined },
                     targetKey: {},
-                    target: {}
+                    target: { default: undefined }
                 },
                 toDOM: (node) => {
-                    return ["a", { href: `${node.attrs.href}${node.attrs.anchor ? "#" + node.attrs.anchor : ""}` }];
+                    return ["a", { href: `${node.attrs.href}${node.attrs.anchor ? "#" + node.attrs.anchor : ""}`, target: node.attrs.target }];
                 },
                 parseDOM: [{
                     tag: "a",
