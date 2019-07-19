@@ -1,6 +1,6 @@
 {
     "name": "@paperbits/prosemirror",
-    "version": "0.1.132",
+    "version": "0.1.133",
     "description": "Paperbits HTML editor based on ProseMirror.",
     "author": "Paperbits",
     "license": "MIT",
