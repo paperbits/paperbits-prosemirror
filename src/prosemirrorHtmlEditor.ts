@@ -406,7 +406,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         this.eventManager.dispatchEvent("onSelectionChange", this);
     }
 
-    private async setAlignment(styleKey: string, viewport: string = "xs") {
+    private async setAlignment(styleKey: string, viewport: string = "xs"): Promise<void> {
         const cursor = this.editorView.state.selection.$cursor || this.editorView.state.selection.$from;
 
         if (!cursor) {
