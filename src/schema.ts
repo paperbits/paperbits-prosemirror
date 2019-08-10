@@ -32,12 +32,12 @@ export class SchemaBuilder {
             result[1]["id"] = node.attrs.id || Utils.identifier();
             return result;
         },
-        block.parseDOM = <any>[{ 
-            tag: tag,
-            getAttrs: (dom) => {
-                return { id: dom.hasAttribute("id") ? dom.getAttribute("id") : Utils.identifier() };
-            }
-        }];
+            block.parseDOM = <any>[{
+                tag: tag,
+                getAttrs: (dom) => {
+                    return { id: dom.hasAttribute("id") ? dom.getAttribute("id") : Utils.identifier() };
+                }
+            }];
 
         return block;
     }
@@ -122,20 +122,26 @@ export class SchemaBuilder {
                     colorKey: {},
                     colorClass: {},
                 },
-                toDOM: (node) => {                    
+                toDOM: (node) => {
                     return ["span", { class: node.attrs.colorClass }];
                 }
             },
             hyperlink: {
                 attrs: {
-                    href: {},
+                    href: { default: undefined },
                     anchor: { default: undefined },
                     anchorName: { default: undefined },
                     targetKey: {},
                     target: { default: undefined }
                 },
                 toDOM: (node) => {
-                    return ["a", { href: `${node.attrs.href}${node.attrs.anchor ? "#" + node.attrs.anchor : ""}`, target: node.attrs.target }];
+                    if (node.attrs.href) {
+                        return ["a", { href: `${node.attrs.href}${node.attrs.anchor ? "#" + node.attrs.anchor : ""}`, target: node.attrs.target }];
+                    }
+                    else {
+                        return ["a"];
+                    }
+
                 },
                 parseDOM: [{
                     tag: "a",
