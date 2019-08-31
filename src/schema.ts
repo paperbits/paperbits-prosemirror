@@ -2,7 +2,7 @@ import { Schema } from "prosemirror-model";
 import * as Utils from "@paperbits/common/utils";
 
 export class SchemaBuilder {
-    private setupBlock(tag: string) {
+    private setupBlock(tag: string): any {
         return {
             group: "block",
             content: "inline*",
@@ -21,7 +21,7 @@ export class SchemaBuilder {
         };
     }
 
-    private setupHeading(tag: "h1" | "h2" | "h3" | "h4" | "h5" | "h6") {
+    private setupHeading(tag: "h1" | "h2" | "h3" | "h4" | "h5" | "h6"): any {
         const block = this.setupBlock(tag);
         block.attrs["id"] = { default: Utils.identifier() };
         block.toDOM = (node) => {
@@ -32,12 +32,12 @@ export class SchemaBuilder {
             result[1]["id"] = node.attrs.id || Utils.identifier();
             return result;
         },
-        block.parseDOM = <any>[{ 
-            tag: tag,
-            getAttrs: (dom) => {
-                return { id: dom.hasAttribute("id") ? dom.getAttribute("id") : Utils.identifier() };
-            }
-        }];
+            block.parseDOM = <any>[{
+                tag: tag,
+                getAttrs: (dom) => {
+                    return { id: dom.hasAttribute("id") ? dom.getAttribute("id") : Utils.identifier() };
+                }
+            }];
 
         return block;
     }
@@ -93,7 +93,7 @@ export class SchemaBuilder {
                 group: "inline",
                 selectable: false,
                 parseDOM: [{ tag: "br" }],
-                toDOM() { return ["br"]; }
+                toDOM: () => ["br"]
             },
             doc: {
                 content: "block+"
@@ -117,12 +117,16 @@ export class SchemaBuilder {
                 toDOM: () => { return ["mark"]; },
                 parseDOM: [{ tag: "mark" }]
             },
+            code: {
+                toDOM: () => { return ["code"]; },
+                parseDOM: [{ tag: "code" }]
+            },
             color: {
                 attrs: {
                     colorKey: {},
                     colorClass: {},
                 },
-                toDOM: (node) => {                    
+                toDOM: (node) => {
                     return ["span", { class: node.attrs.colorClass }];
                 }
             },

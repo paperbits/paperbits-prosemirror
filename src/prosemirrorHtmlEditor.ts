@@ -112,6 +112,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             selectionState.bold = state.doc.rangeHasMark(from, to, this.schema.marks.bold);
             selectionState.underlined = state.doc.rangeHasMark(from, to, this.schema.marks.underlined);
             selectionState.highlighted = state.doc.rangeHasMark(from, to, this.schema.marks.highlighted);
+            selectionState.code = state.doc.rangeHasMark(from, to, this.schema.marks.code);
             selectionState.colorKey = this.getColor();
 
             if (currentBlock.attrs && currentBlock.attrs.styles) {
@@ -152,6 +153,11 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     public toggleHighlighted(): void {
         toggleMark(this.schema.marks.highlighted)(this.editorView.state, this.editorView.dispatch);
+        this.editorView.focus();
+    }
+
+    public toggleCode(): void {
+        toggleMark(this.schema.marks.code)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
     }
 
