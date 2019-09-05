@@ -7,6 +7,7 @@ import { Schema, DOMSerializer } from "prosemirror-model";
 import { EditorState, Plugin } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { baseKeymap, toggleMark, setBlockType } from "prosemirror-commands";
+import { splitListItem, liftListItem, sinkListItem } from "prosemirror-schema-list";
 import { history } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
 import { wrapInList } from "./lists";
@@ -212,13 +213,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         // Bindings.applyTypography(blockNode, { size: "smaller" });
     }
 
-    public setTypegraphy(font: string): void {
-        // const blockNode = <HTMLElement>this.getClosestNode(this.blockNodes);
-        // Bindings.applyTypography(blockNode, { font: font });
-        // this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
-    }
-
-    private updateMark(markType, markAttrs: Object) {
+    private updateMark(markType: any, markAttrs: Object): void {
         if (!markAttrs) {
             return;
         }
@@ -244,7 +239,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         this.editorView.dispatch(tr.addMark(markLocation.from, markLocation.to, markItem));
     }
 
-    private removeMark(markType) {
+    private removeMark(markType: any): void {
         const state = this.editorView.state;
         const markLocation = (!state.selection.empty && state.selection) || this.getMarkLocation(state.tr.doc, state.selection.$cursor.pos, markType);
 
@@ -357,22 +352,22 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public increaseIndent(): void {
-        throw new Error("Not implemented");
+        sinkListItem(this.schema.nodes.list_item);
     }
 
     public decreaseIndent(): void {
-        throw new Error("Not implemented");
+        liftListItem(this.schema.nodes.list_item);
     }
 
     public expandSelection(to?: string): void {
         throw new Error("Not implemented");
     }
 
-    public setTextStyle(textStyleKey: string, viewport?: string) {
+    public setTextStyle(textStyleKey: string, viewport?: string): void {
         this.updateTextStyle(textStyleKey, viewport);
     }
 
-    private async updateTextStyle(textStyleKey: string, viewport: string = "xs") {
+    private async updateTextStyle(textStyleKey: string, viewport: string = "xs"): Promise<void> {
         const cursor = this.editorView.state.selection.$cursor || this.editorView.state.selection.$from;
 
         if (!cursor) {
