@@ -1,5 +1,5 @@
 ﻿import { BlockModel } from "@paperbits/common/text/models";
-import { IEventManager } from "@paperbits/common/events";
+import { EventManager } from "@paperbits/common/events";
 import { IStyleCompiler } from "@paperbits/common/styles";
 import { HyperlinkModel } from "@paperbits/common/permalinks";
 import { IHtmlEditor, SelectionState, alignmentStyleKeys, HtmlEditorEvents } from "@paperbits/common/editing";
@@ -22,7 +22,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     private node: any;
 
     constructor(
-        readonly eventManager: IEventManager,
+        readonly eventManager: EventManager,
         readonly styleCompiler: IStyleCompiler
     ) {
         // setting up...
