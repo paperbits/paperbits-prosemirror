@@ -1,6 +1,6 @@
 ﻿import { BlockModel } from "@paperbits/common/text/models";
 import { EventManager } from "@paperbits/common/events";
-import { IStyleCompiler } from "@paperbits/common/styles";
+import { StyleCompiler } from "@paperbits/common/styles";
 import { HyperlinkModel } from "@paperbits/common/permalinks";
 import { IHtmlEditor, SelectionState, alignmentStyleKeys, HtmlEditorEvents } from "@paperbits/common/editing";
 import { Schema, DOMSerializer } from "prosemirror-model";
@@ -23,7 +23,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     constructor(
         readonly eventManager: EventManager,
-        readonly styleCompiler: IStyleCompiler
+        readonly styleCompiler: StyleCompiler
     ) {
         // setting up...
         this.eventManager.addEventListener("onEscape", this.detachFromElement.bind(this));
