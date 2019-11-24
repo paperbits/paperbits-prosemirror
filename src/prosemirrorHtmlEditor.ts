@@ -398,7 +398,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         setBlockType(this.schema.nodes.paragraph)(this.editorView.state, this.editorView.dispatch);
 
         if (Object.keys(blockStyle).length > 0) {
-            const className = await this.styleCompiler.getClassNamesByStyleConfigAsync(blockStyle);
+            const className = await this.styleCompiler.getClassNamesForLocalStylesAsync(blockStyle);
             setBlockType(blockType, { styles: blockStyle, className: className })(this.editorView.state, this.editorView.dispatch);
         } else {
             setBlockType(blockType)(this.editorView.state, this.editorView.dispatch);
@@ -423,7 +423,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
         Object.assign(blockStyle.alignment, { [viewport]: styleKey });
 
-        const className = await this.styleCompiler.getClassNamesByStyleConfigAsync(blockStyle);
+        const className = await this.styleCompiler.getClassNamesForLocalStylesAsync(blockStyle);
 
         setBlockType(this.schema.nodes.paragraph)(this.editorView.state, this.editorView.dispatch);
         setBlockType(blockType, { styles: blockStyle, className: className })(this.editorView.state, this.editorView.dispatch);
