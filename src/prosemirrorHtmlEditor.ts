@@ -1,6 +1,6 @@
 ﻿import { BlockModel } from "@paperbits/common/text/models";
 import { EventManager } from "@paperbits/common/events";
-import { StyleCompiler } from "@paperbits/common/styles";
+import { StyleCompiler, LocalStyles } from "@paperbits/common/styles";
 import { HyperlinkModel } from "@paperbits/common/permalinks";
 import { IHtmlEditor, SelectionState, alignmentStyleKeys, HtmlEditorEvents } from "@paperbits/common/editing";
 import { Schema, DOMSerializer } from "prosemirror-model";
@@ -377,7 +377,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         const path = cursor.path.filter(x => x.type);
         const currentBlock = path[path.length - 1];
         const blockType = currentBlock.type;
-        const blockStyle = currentBlock.attrs.styles || {};
+        const blockStyle: LocalStyles = currentBlock.attrs.styles || {};
 
         blockStyle.appearance = blockStyle.appearance || {};
         if (textStyleKey) {
