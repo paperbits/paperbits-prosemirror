@@ -1,5 +1,4 @@
 import { Schema } from "prosemirror-model";
-import * as Utils from "@paperbits/common/utils";
 
 export class SchemaBuilder {
     private setupBlock(tag: string): any {
@@ -7,15 +6,22 @@ export class SchemaBuilder {
             group: "block",
             content: "inline*",
             attrs: {
+                id: { default: null },
                 className: { default: null },
                 styles: { default: null }
             },
             toDOM: (node) => {
-                const result = [tag, {}, 0];
-                if (node.attrs.className) {
-                    result[1] = { class: node.attrs.className };
+                const properties: any = {};
+
+                if (node.attrs.id) {
+                    properties.id = node.attrs.id;
                 }
-                return result;
+    
+                if (node.attrs.className) {
+                    properties.class = node.attrs.className;
+                }
+    
+                return [tag, properties, 0];
             },
             parseDOM: [{ tag: tag }]
         };
@@ -23,21 +29,15 @@ export class SchemaBuilder {
 
     private setupHeading(tag: "h1" | "h2" | "h3" | "h4" | "h5" | "h6"): any {
         const block = this.setupBlock(tag);
-        block.attrs["id"] = { default: Utils.identifier() };
-        block.toDOM = (node) => {
-            const result = [tag, {}, 0];
-            if (node.attrs.className) {
-                result[1] = { class: node.attrs.className };
+
+        block.parseDOM = <any>[{
+            tag: tag,
+            getAttrs: (dom) => {
+                return {
+                    id: dom.hasAttribute("id") ? dom.getAttribute("id") : null
+                };
             }
-            result[1]["id"] = node.attrs.id || Utils.identifier();
-            return result;
-        },
-            block.parseDOM = <any>[{
-                tag: tag,
-                getAttrs: (dom) => {
-                    return { id: dom.hasAttribute("id") ? dom.getAttribute("id") : Utils.identifier() };
-                }
-            }];
+        }];
 
         return block;
     }
