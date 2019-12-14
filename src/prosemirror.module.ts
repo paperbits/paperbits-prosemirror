@@ -4,13 +4,15 @@ import { ProseMirrorHtmlEditor } from "./prosemirrorHtmlEditor";
 export class ProseMirrorModule implements IInjectorModule {
     public register(injector: IInjector): void {
         injector.bind("htmlEditor", ProseMirrorHtmlEditor);
-        
-        injector.bind("htmlEditorFactory", () => {
+
+        const factory = function () {
             return {
                 createHtmlEditor: () => {
                     return injector.resolve("htmlEditor");
                 }
             };
-        });
+        };
+
+        injector.bind("htmlEditorFactory", factory);
     }
 }
