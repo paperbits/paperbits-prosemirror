@@ -276,6 +276,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         if (!hyperlink.href && !hyperlink.targetKey) {
             return;
         }
+
         this.updateMark(this.schema.marks.hyperlink, hyperlink);
     }
 
@@ -311,18 +312,22 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     public getHyperlink(): HyperlinkModel { // TODO: Move to Selection state
         const doc = this.editorView.state.tr.doc;
+
         if (this.editorView.state.selection.$cursor) {
             const $pos = doc.resolve(this.editorView.state.selection.$cursor.pos);
             const start = $pos.parent.childAfter($pos.parentOffset);
+
             if (!start.node) {
                 return null;
             }
 
             const mark = start.node.marks.find((mark) => mark.type === this.schema.marks.hyperlink);
             return mark ? mark.attrs : null;
-        } else {
+        }
+        else {
             const $pos = doc.resolve(this.editorView.state.selection.$from.pos);
             const start = $pos.parent.childAfter($pos.parentOffset);
+
             if (!start.node) {
                 return null;
             }
