@@ -107,8 +107,8 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             const typeName = blockType.name;
 
             selectionState.block = blockType.name;
-            selectionState.orderedList = typeName.contains("ordered_list");
-            selectionState.bulletedList = typeName.contains("bulleted_list");
+            selectionState.orderedList = typeName.includes("ordered_list");
+            selectionState.bulletedList = typeName.includes("bulleted_list");
             selectionState.italic = state.doc.rangeHasMark(from, to, this.schema.marks.italic);
             selectionState.bold = state.doc.rangeHasMark(from, to, this.schema.marks.bold);
             selectionState.underlined = state.doc.rangeHasMark(from, to, this.schema.marks.underlined);
