@@ -132,10 +132,10 @@ export class SchemaBuilder {
             },
             hyperlink: {
                 attrs: {
-                    href: {},
+                    href: { default: undefined },
                     anchor: { default: undefined },
                     anchorName: { default: undefined },
-                    targetKey: {},
+                    targetKey: { default: undefined },
                     target: { default: undefined }
                 },
                 toDOM: (node) => {
