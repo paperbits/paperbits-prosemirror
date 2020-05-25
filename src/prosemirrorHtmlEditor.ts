@@ -2,6 +2,7 @@
 import { EventManager } from "@paperbits/common/events";
 import { StyleCompiler, LocalStyles } from "@paperbits/common/styles";
 import { HyperlinkModel } from "@paperbits/common/permalinks";
+import { Logger } from "@paperbits/common/logging";
 import { IHtmlEditor, SelectionState, alignmentStyleKeys, HtmlEditorEvents } from "@paperbits/common/editing";
 import { Schema, DOMSerializer } from "prosemirror-model";
 import { EditorState, Plugin } from "prosemirror-state";
@@ -23,7 +24,8 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     constructor(
         readonly eventManager: EventManager,
-        readonly styleCompiler: StyleCompiler
+        readonly styleCompiler: StyleCompiler,
+        readonly logger: Logger
     ) {
         // setting up...
         this.eventManager.addEventListener("onEscape", this.detachFromElement.bind(this));
@@ -167,8 +169,20 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         this.editorView.focus();
     }
 
-    public toggleUnorderedList(): void {
-        wrapInList(this.schema.nodes.bulleted_list)(this.editorView.state, this.editorView.dispatch);
+    public async toggleUnorderedList(styleKey: string = "globals/ul/default"): Promise<void> {
+        let attrs = {};
+
+        if (styleKey) {
+            const className = await this.styleCompiler.getClassNameByStyleKeyAsync(styleKey);
+
+            if (className) {
+                attrs = { className: className, styles: { appearance: styleKey } };
+            }
+        }
+
+        wrapInList(this.schema.nodes.bulleted_list, attrs)(this.editorView.state, this.editorView.dispatch);
+        
+        
         this.editorView.focus();
     }
 
@@ -385,16 +399,11 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         const blockStyle: LocalStyles = currentBlock.attrs.styles || {};
 
         blockStyle.appearance = blockStyle.appearance || {};
+
         if (textStyleKey) {
-            // Object.assign(blockStyle.appearance, { [viewport]: textStyleKey });
             blockStyle.appearance = textStyleKey;
-        } else {
-            // if (blockStyle.appearance[viewport]) {
-            //     delete blockStyle.appearance[viewport];
-            //     if (Object.keys(blockStyle.appearance).length === 0) {
-            //         delete blockStyle.appearance;
-            //     }
-            // }
+        }
+        else {
             if (blockStyle.appearance) {
                 delete blockStyle.appearance;
             }
@@ -405,7 +414,8 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         if (Object.keys(blockStyle).length > 0) {
             const className = await this.styleCompiler.getClassNamesForLocalStylesAsync(blockStyle);
             setBlockType(blockType, { styles: blockStyle, className: className })(this.editorView.state, this.editorView.dispatch);
-        } else {
+        }
+        else {
             setBlockType(blockType)(this.editorView.state, this.editorView.dispatch);
         }
         this.editorView.focus();
@@ -432,6 +442,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
         setBlockType(this.schema.nodes.paragraph)(this.editorView.state, this.editorView.dispatch);
         setBlockType(blockType, { styles: blockStyle, className: className })(this.editorView.state, this.editorView.dispatch);
+
         this.editorView.focus();
         this.eventManager.dispatchEvent("onSelectionChange", this);
     }
@@ -467,12 +478,12 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         // this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
     }
 
-    private setBlockTypeAndNotify(blockType, attrs?) {
+    private setBlockTypeAndNotify(blockType: any, attrs?: any): void {
         setBlockType(blockType, attrs)(this.editorView.state, this.editorView.dispatch);
         this.eventManager.dispatchEvent("onSelectionChange", this);
     }
 
-    private handleUpdates(view, prevState): void {
+    private handleUpdates(view: any, prevState: any): void {
         this.eventManager.dispatchEvent("htmlEditorChanged", this);
 
         const state = view.state;

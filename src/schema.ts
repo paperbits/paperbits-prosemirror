@@ -16,11 +16,11 @@ export class SchemaBuilder {
                 if (node.attrs.id) {
                     properties.id = node.attrs.id;
                 }
-    
+
                 if (node.attrs.className) {
                     properties.class = node.attrs.className;
                 }
-    
+
                 return [tag, properties, 0];
             },
             parseDOM: [{ tag: tag }]
@@ -60,15 +60,28 @@ export class SchemaBuilder {
                     }
                 }],
                 toDOM: (node) => {
-                    return node.attrs.order === 1 ? ["ol", 0] : ["ol", { start: node.attrs.order }, 0];
+                    return node.attrs.order === 1
+                        ? ["ol", 0]
+                        : ["ol", { start: node.attrs.order }, 0];
                 }
             },
             bulleted_list: {
                 content: "list_item+",
                 group: "block",
+                attrs: {
+                    className: { default: null },
+                    styles: { default: null }
+                },
                 parseDOM: [{ tag: "ul" }],
-                toDOM: () => {
-                    return ["ul", 0];
+                toDOM: (node) => {
+                    const tag = "ul";
+                    const properties: any = {};
+
+                    if (node.attrs.className) {
+                        properties.class = node.attrs.className;
+                    }
+    
+                    return [tag, properties, 0];
                 }
             },
             list_item: {
