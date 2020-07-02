@@ -130,6 +130,10 @@ export class SchemaBuilder {
                 toDOM: () => { return ["mark"]; },
                 parseDOM: [{ tag: "mark" }]
             },
+            striked: {
+                toDOM: () => { return ["strike"]; },
+                parseDOM: [{ tag: "strike" }]
+            },
             code: {
                 toDOM: () => { return ["code"]; },
                 parseDOM: [{ tag: "code" }]
