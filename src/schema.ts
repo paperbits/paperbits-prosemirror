@@ -13,11 +13,11 @@ export class SchemaBuilder {
             toDOM: (node) => {
                 const properties: any = {};
 
-                if (node.attrs.id) {
+                if (node.attrs?.id) {
                     properties.id = node.attrs.id;
                 }
 
-                if (node.attrs.className) {
+                if (node.attrs?.className) {
                     properties.class = node.attrs.className;
                 }
 
@@ -80,7 +80,7 @@ export class SchemaBuilder {
                     if (node.attrs.className) {
                         properties.class = node.attrs.className;
                     }
-    
+
                     return [tag, properties, 0];
                 }
             },
