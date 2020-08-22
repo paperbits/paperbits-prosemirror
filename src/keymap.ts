@@ -58,11 +58,11 @@ export function buildKeymap(schema, mapKeys) {
     bind("Mod-BracketLeft", lift);
     bind("Escape", selectParentNode);
 
-    if (type = schema.marks.strong) {
+    if (type = schema.marks.bold) {
         bind("Mod-b", toggleMark(type));
     }
 
-    if (type = schema.marks.em) {
+    if (type = schema.marks.italic) {
         bind("Mod-i", toggleMark(type));
     }
 
