@@ -153,10 +153,15 @@ export class SchemaBuilder {
                     anchor: { default: undefined },
                     anchorName: { default: undefined },
                     targetKey: { default: undefined },
-                    target: { default: undefined }
+                    target: { default: undefined },
+                    download: { default: undefined }
                 },
                 toDOM: (node) => {
-                    return ["a", { href: `${node.attrs.href}${node.attrs.anchor ? "#" + node.attrs.anchor : ""}`, target: node.attrs.target }];
+                    return ["a", {
+                        href: `${node.attrs.href}${node.attrs.anchor ? "#" + node.attrs.anchor : ""}`,
+                        target: node.attrs.target,
+                        download: node.attrs.download
+                    }];
                 },
                 parseDOM: [{
                     tag: "a",
