@@ -2,9 +2,8 @@
 import { EventManager } from "@paperbits/common/events";
 import { StyleCompiler, LocalStyles } from "@paperbits/common/styles";
 import { HyperlinkModel } from "@paperbits/common/permalinks";
-import { Logger } from "@paperbits/common/logging";
 import { IHtmlEditor, SelectionState, alignmentStyleKeys, HtmlEditorEvents } from "@paperbits/common/editing";
-import { Schema, DOMSerializer } from "prosemirror-model";
+import { DOMSerializer } from "prosemirror-model";
 import { EditorState, Plugin } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { baseKeymap, toggleMark, setBlockType } from "prosemirror-commands";
@@ -15,24 +14,19 @@ import { wrapInList } from "./lists";
 import { buildKeymap } from "./keymap";
 import { SchemaBuilder } from "./schema";
 
+const builder = new SchemaBuilder();
+const schema = builder.build();
+
 export class ProseMirrorHtmlEditor implements IHtmlEditor {
     private element: Element;
     private editorView: EditorView;
-    private schema: Schema;
     private content: any;
     private node: any;
 
     constructor(
         readonly eventManager: EventManager,
-        readonly styleCompiler: StyleCompiler,
-        readonly logger: Logger
-    ) {
-        // setting up...
-        this.eventManager.addEventListener("onEscape", this.detachFromElement.bind(this));
-
-        const builder = new SchemaBuilder();
-        this.schema = builder.build();
-    }
+        readonly styleCompiler: StyleCompiler
+    ) { }
 
     public getState(): BlockModel[] {
         let content;
@@ -55,10 +49,10 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             content: content
         };
 
-        this.node = this.schema.nodeFromJSON(this.content);
+        this.node = schema.nodeFromJSON(this.content);
 
         const fragment = DOMSerializer
-            .fromSchema(this.schema)
+            .fromSchema(schema)
             .serializeFragment(this.node);
 
         this.element.appendChild(fragment);
@@ -111,12 +105,12 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             selectionState.block = blockType.name;
             selectionState.orderedList = typeName.includes("ordered_list");
             selectionState.bulletedList = typeName.includes("bulleted_list");
-            selectionState.italic = state.doc.rangeHasMark(from, to, this.schema.marks.italic);
-            selectionState.bold = state.doc.rangeHasMark(from, to, this.schema.marks.bold);
-            selectionState.underlined = state.doc.rangeHasMark(from, to, this.schema.marks.underlined);
-            selectionState.highlighted = state.doc.rangeHasMark(from, to, this.schema.marks.highlighted);
-            selectionState.striked = state.doc.rangeHasMark(from, to, this.schema.marks.striked);
-            selectionState.code = state.doc.rangeHasMark(from, to, this.schema.marks.code);
+            selectionState.italic = state.doc.rangeHasMark(from, to, schema.marks.italic);
+            selectionState.bold = state.doc.rangeHasMark(from, to, schema.marks.bold);
+            selectionState.underlined = state.doc.rangeHasMark(from, to, schema.marks.underlined);
+            selectionState.highlighted = state.doc.rangeHasMark(from, to, schema.marks.highlighted);
+            selectionState.striked = state.doc.rangeHasMark(from, to, schema.marks.striked);
+            selectionState.code = state.doc.rangeHasMark(from, to, schema.marks.code);
             selectionState.colorKey = this.getColor();
 
             if (currentBlock.attrs && currentBlock.attrs.styles) {
@@ -141,37 +135,37 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public toggleBold(): void {
-        toggleMark(this.schema.marks.bold)(this.editorView.state, this.editorView.dispatch);
+        toggleMark(schema.marks.bold)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
     }
 
     public toggleItalic(): void {
-        toggleMark(this.schema.marks.italic)(this.editorView.state, this.editorView.dispatch);
+        toggleMark(schema.marks.italic)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
     }
 
     public toggleUnderlined(): void {
-        toggleMark(this.schema.marks.underlined)(this.editorView.state, this.editorView.dispatch);
+        toggleMark(schema.marks.underlined)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
     }
 
     public toggleHighlighted(): void {
-        toggleMark(this.schema.marks.highlighted)(this.editorView.state, this.editorView.dispatch);
+        toggleMark(schema.marks.highlighted)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
     }
 
     public toggleStriked(): void {
-        toggleMark(this.schema.marks.striked)(this.editorView.state, this.editorView.dispatch);
+        toggleMark(schema.marks.striked)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
     }
 
     public toggleCode(): void {
-        toggleMark(this.schema.marks.code)(this.editorView.state, this.editorView.dispatch);
+        toggleMark(schema.marks.code)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
     }
 
     public toggleOrderedList(): void {
-        wrapInList(this.schema.nodes.ordered_list)(this.editorView.state, this.editorView.dispatch);
+        wrapInList(schema.nodes.ordered_list)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
     }
 
@@ -186,46 +180,46 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             }
         }
 
-        wrapInList(this.schema.nodes.bulleted_list, attrs)(this.editorView.state, this.editorView.dispatch);
-        
-        
+        wrapInList(schema.nodes.bulleted_list, attrs)(this.editorView.state, this.editorView.dispatch);
+
+
         this.editorView.focus();
     }
 
     public toggleParagraph(): void {
-        this.setBlockTypeAndNotify(this.schema.nodes.paragraph);
+        this.setBlockTypeAndNotify(schema.nodes.paragraph);
     }
 
     public toggleH1(): void {
-        this.setBlockTypeAndNotify(this.schema.nodes.heading1);
+        this.setBlockTypeAndNotify(schema.nodes.heading1);
     }
 
     public toggleH2(): void {
-        this.setBlockTypeAndNotify(this.schema.nodes.heading2);
+        this.setBlockTypeAndNotify(schema.nodes.heading2);
     }
 
     public toggleH3(): void {
-        this.setBlockTypeAndNotify(this.schema.nodes.heading3);
+        this.setBlockTypeAndNotify(schema.nodes.heading3);
     }
 
     public toggleH4(): void {
-        this.setBlockTypeAndNotify(this.schema.nodes.heading4);
+        this.setBlockTypeAndNotify(schema.nodes.heading4);
     }
 
     public toggleH5(): void {
-        this.setBlockTypeAndNotify(this.schema.nodes.heading5);
+        this.setBlockTypeAndNotify(schema.nodes.heading5);
     }
 
     public toggleH6(): void {
-        this.setBlockTypeAndNotify(this.schema.nodes.heading6);
+        this.setBlockTypeAndNotify(schema.nodes.heading6);
     }
 
     public toggleQuote(): void {
-        this.setBlockTypeAndNotify(this.schema.nodes.quote);
+        this.setBlockTypeAndNotify(schema.nodes.quote);
     }
 
     public toggleFormatted(): void {
-        this.setBlockTypeAndNotify(this.schema.nodes.formatted);
+        this.setBlockTypeAndNotify(schema.nodes.formatted);
     }
 
     public toggleSize(): void {
@@ -272,7 +266,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     public setColor(colorKey: string): void {
         const className = this.styleCompiler.getClassNameByColorKey(colorKey);
-        this.updateMark(this.schema.marks.color, { colorKey: colorKey, colorClass: className });
+        this.updateMark(schema.marks.color, { colorKey: colorKey, colorClass: className });
     }
 
     public getColor(): string {
@@ -285,11 +279,11 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public removeColor(): void {
-        this.removeMark(this.schema.marks.color);
+        this.removeMark(schema.marks.color);
     }
 
     public removeHyperlink(): void {
-        this.removeMark(this.schema.marks.hyperlink);
+        this.removeMark(schema.marks.hyperlink);
     }
 
     public setHyperlink(hyperlink: HyperlinkModel): void {
@@ -297,7 +291,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             return;
         }
 
-        this.updateMark(this.schema.marks.hyperlink, hyperlink);
+        this.updateMark(schema.marks.hyperlink, hyperlink);
     }
 
     private getMarkLocation(doc, pos, markType): { from: number, to: number } {
@@ -341,7 +335,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
                 return null;
             }
 
-            const mark = start.node.marks.find((mark) => mark.type === this.schema.marks.hyperlink);
+            const mark = start.node.marks.find((mark) => mark.type === schema.marks.hyperlink);
             return mark ? mark.attrs : null;
         }
         else {
@@ -352,7 +346,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
                 return null;
             }
 
-            const mark = start.node.marks.find((mark) => mark.type === this.schema.marks.hyperlink);
+            const mark = start.node.marks.find((mark) => mark.type === schema.marks.hyperlink);
             return mark ? mark.attrs : null;
         }
     }
@@ -377,11 +371,11 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public increaseIndent(): void {
-        sinkListItem(this.schema.nodes.list_item);
+        sinkListItem(schema.nodes.list_item);
     }
 
     public decreaseIndent(): void {
-        liftListItem(this.schema.nodes.list_item);
+        liftListItem(schema.nodes.list_item);
     }
 
     public expandSelection(to?: string): void {
@@ -415,7 +409,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             }
         }
 
-        setBlockType(this.schema.nodes.paragraph)(this.editorView.state, this.editorView.dispatch);
+        setBlockType(schema.nodes.paragraph)(this.editorView.state, this.editorView.dispatch);
 
         if (Object.keys(blockStyle).length > 0) {
             const className = await this.styleCompiler.getClassNamesForLocalStylesAsync(blockStyle);
@@ -446,7 +440,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
         const className = await this.styleCompiler.getClassNamesForLocalStylesAsync(blockStyle);
 
-        setBlockType(this.schema.nodes.paragraph)(this.editorView.state, this.editorView.dispatch);
+        setBlockType(schema.nodes.paragraph)(this.editorView.state, this.editorView.dispatch);
         setBlockType(blockType, { styles: blockStyle, className: className })(this.editorView.state, this.editorView.dispatch);
 
         this.editorView.focus();
@@ -510,7 +504,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             return;
         }
 
-        const doc: any = this.schema.nodeFromJSON(this.content);
+        const doc: any = schema.nodeFromJSON(this.content);
 
         const handleUpdates = this.handleUpdates.bind(this);
 
@@ -528,7 +522,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             state: EditorState.create({
                 doc,
                 plugins: plugins.concat([
-                    keymap(buildKeymap(this.schema, null)),
+                    keymap(buildKeymap(schema, null)),
                     keymap(baseKeymap),
                     history()])
             })
@@ -550,13 +544,5 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     public detachFromElement(): void {
         this.disable();
-    }
-
-    public addSelectionChangeListener(callback: () => void): void {
-        this.eventManager.addEventListener(HtmlEditorEvents.onSelectionChange, callback);
-    }
-
-    public removeSelectionChangeListener(callback: (htmlEditor: IHtmlEditor) => void): void {
-        this.eventManager.removeEventListener(HtmlEditorEvents.onSelectionChange, callback);
     }
 }
