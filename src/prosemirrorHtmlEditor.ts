@@ -42,20 +42,25 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     public setState(content: BlockModel[]): void {
-        content = this.modelToProseMirrorModel(content);
+        try {
+            content = this.modelToProseMirrorModel(content);
 
-        this.content = {
-            type: "doc",
-            content: content
-        };
+            this.content = {
+                type: "doc",
+                content: content
+            };
 
-        this.node = schema.nodeFromJSON(this.content);
+            this.node = schema.nodeFromJSON(this.content);
 
-        const fragment = DOMSerializer
-            .fromSchema(schema)
-            .serializeFragment(this.node);
+            const fragment = DOMSerializer
+                .fromSchema(schema)
+                .serializeFragment(this.node);
 
-        this.element.appendChild(fragment);
+            this.element.appendChild(fragment);
+        }
+        catch (error) {
+            console.error(error.stack);
+        }
     }
 
     private modelToProseMirrorModel(source: any): any {
