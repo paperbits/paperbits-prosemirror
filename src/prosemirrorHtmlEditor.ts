@@ -35,9 +35,13 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             content = this.editorView.state.toJSON()["doc"]["content"];
         }
         else {
-            content = this.content.content;
+            content = this.content?.content;
         }
 
+        if (!content) {
+            return null;
+        }
+        
         return this.proseMirrorModelToModel(content);
     }
 
