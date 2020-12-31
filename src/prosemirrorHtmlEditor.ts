@@ -21,12 +21,13 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     private element: Element;
     private editorView: EditorView;
     private content: any;
-    private node: any;
 
     constructor(
         readonly eventManager: EventManager,
         readonly styleCompiler: StyleCompiler
     ) { }
+
+    public onStateChange: (state: BlockModel[]) => void;
 
     public getState(): BlockModel[] {
         let content;
@@ -35,30 +36,26 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             content = this.editorView.state.toJSON()["doc"]["content"];
         }
         else {
-            content = this.content?.content;
+            content = this.content.content;
         }
 
-        if (!content) {
-            return null;
-        }
-        
         return this.proseMirrorModelToModel(content);
     }
 
     public setState(content: BlockModel[]): void {
         try {
-            content = this.modelToProseMirrorModel(content);
+            const prosemirrorContent = this.modelToProseMirrorModel(content);
 
             this.content = {
                 type: "doc",
-                content: content
+                content: prosemirrorContent
             };
 
-            this.node = schema.nodeFromJSON(this.content);
+            const node: any = schema.nodeFromJSON(this.content);
 
             const fragment = DOMSerializer
                 .fromSchema(schema)
-                .serializeFragment(this.node);
+                .serializeFragment(node);
 
             this.element.appendChild(fragment);
         }
@@ -497,8 +494,9 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
         const state = view.state;
 
-        if (prevState && !prevState.doc.eq(state.doc)) {
-            this.eventManager.dispatchEvent("onContentUpdate");
+        if (this.onStateChange && prevState && !prevState.doc.eq(state.doc)) {
+            const newState = this.getState();
+            this.onStateChange(newState);
         }
 
         if (prevState && !prevState.selection.eq(state.selection)) {
