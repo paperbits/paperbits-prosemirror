@@ -165,7 +165,7 @@ export class SchemaBuilder {
                 },
                 parseDOM: [{
                     tag: "a",
-                    getAttrs: (dom) => { return { href: dom.href }; }
+                    getAttrs: (dom) => { return { href: dom.href, target: dom.target }; }
                 }],
                 inclusive: false
             }

@@ -292,14 +292,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         this.removeMark(schema.marks.hyperlink);
     }
 
-    public setHyperlink(hyperlink: HyperlinkModel): void {
-        if (!hyperlink.href && !hyperlink.targetKey) {
-            return;
-        }
-
-        this.updateMark(schema.marks.hyperlink, hyperlink);
-    }
-
     private getMarkLocation(doc, pos, markType): { from: number, to: number } {
         const $pos = doc.resolve(pos);
 
@@ -330,31 +322,33 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         return { from: startPos, to: endPos };
     }
 
+    public setHyperlink(hyperlink: HyperlinkModel): void {
+        if (!hyperlink.href && !hyperlink.targetKey) {
+            return;
+        }
+
+        this.updateMark(schema.marks.hyperlink, hyperlink);
+    }
+
     public getHyperlink(): HyperlinkModel { // TODO: Move to Selection state
         const doc = this.editorView.state.tr.doc;
+        let $pos: any;
 
         if (this.editorView.state.selection.$cursor) {
-            const $pos = doc.resolve(this.editorView.state.selection.$cursor.pos);
-            const start = $pos.parent.childAfter($pos.parentOffset);
-
-            if (!start.node) {
-                return null;
-            }
-
-            const mark = start.node.marks.find((mark) => mark.type === schema.marks.hyperlink);
-            return mark ? mark.attrs : null;
+            $pos = doc.resolve(this.editorView.state.selection.$cursor.pos);
         }
         else {
-            const $pos = doc.resolve(this.editorView.state.selection.$from.pos);
-            const start = $pos.parent.childAfter($pos.parentOffset);
-
-            if (!start.node) {
-                return null;
-            }
-
-            const mark = start.node.marks.find((mark) => mark.type === schema.marks.hyperlink);
-            return mark ? mark.attrs : null;
+            $pos = doc.resolve(this.editorView.state.selection.$from.pos);
         }
+
+        const start = $pos.parent.childAfter($pos.parentOffset);
+
+        if (!start?.node) {
+            return null;
+        }
+
+        const mark = start.node.marks.find((mark) => mark.type === schema.marks.hyperlink);
+        return mark ? mark.attrs : null;
     }
 
     public setAnchor(hash: string, anchorKey: string): void {
