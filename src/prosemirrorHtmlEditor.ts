@@ -12,9 +12,9 @@ import { history } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
 import { wrapInList } from "./lists";
 import { buildKeymap } from "./keymap";
-import { SchemaBuilder } from "./schema";
+import { ProsemirrorSchemaBuilder } from "./prosemirrorSchemaBuilder";
 
-const builder = new SchemaBuilder();
+const builder = new ProsemirrorSchemaBuilder();
 const schema = builder.build();
 
 export class ProseMirrorHtmlEditor implements IHtmlEditor {

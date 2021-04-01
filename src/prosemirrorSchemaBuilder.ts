@@ -1,6 +1,7 @@
+import { HyperlinkTarget } from "@paperbits/common/permalinks";
 import { Schema } from "prosemirror-model";
 
-export class SchemaBuilder {
+export class ProsemirrorSchemaBuilder {
     private setupBlock(tag: string): any {
         return {
             group: "block",
@@ -149,19 +150,44 @@ export class SchemaBuilder {
             },
             hyperlink: {
                 attrs: {
-                    href: { default: undefined },
-                    anchor: { default: undefined },
-                    anchorName: { default: undefined },
-                    targetKey: { default: undefined },
-                    target: { default: undefined },
-                    download: { default: undefined }
+                    "href": { default: undefined },
+                    "anchor": { default: undefined },
+                    "anchorName": { default: undefined },
+                    "targetKey": { default: undefined },
+                    "target": { default: undefined },
+                    "download": { default: undefined },
+                    "data-toggle": { default: undefined },
+                    "data-target": { default: undefined }
                 },
                 toDOM: (node) => {
-                    return ["a", {
-                        href: `${node.attrs.href}${node.attrs.anchor ? "#" + node.attrs.anchor : ""}`,
-                        target: node.attrs.target,
-                        download: node.attrs.download
-                    }];
+                    const hyperlink = node.attrs;
+
+                    let hyperlinkObj;
+
+                    switch (hyperlink.target) {
+                        case HyperlinkTarget.popup:
+                            hyperlinkObj = {
+                                "data-toggle": "popup",
+                                "data-target": `#${hyperlink.targetKey.replace("popups/", "popups")}`,
+                                "href": "javascript:void(0)"
+                            };
+                            break;
+
+                        case HyperlinkTarget.download:
+                            hyperlinkObj = {
+                                href: hyperlink.href,
+                                download: "" // Leave empty unless file name gets specified.
+                            };
+                            break;
+
+                        default:
+                            hyperlinkObj = {
+                                href: `${hyperlink.href}${hyperlink.anchor ? "#" + hyperlink.anchor : ""}`,
+                                target: hyperlink.target
+                            };
+                    }
+
+                    return ["a", hyperlinkObj];
                 },
                 parseDOM: [{
                     tag: "a",
