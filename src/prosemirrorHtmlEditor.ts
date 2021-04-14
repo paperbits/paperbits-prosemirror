@@ -140,6 +140,20 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         throw new Error("Not implemented");
     }
 
+    public insertProperty(name: string, placeholder: string): void {
+        const state = this.editorView.state;
+        const dispatch = this.editorView.dispatch;
+        const from = state.selection.$from;
+        const index = from.index();
+        const propertyType = schema.nodes.property;
+
+        if (!from.parent.canReplaceWith(index, index, propertyType)) {
+            return;
+        }
+
+        dispatch(state.tr.replaceSelectionWith(propertyType.create({ name: name, placeholder: placeholder })));
+    }
+
     public toggleBold(): void {
         toggleMark(schema.marks.bold)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
@@ -187,8 +201,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         }
 
         wrapInList(schema.nodes.bulleted_list, attrs)(this.editorView.state, this.editorView.dispatch);
-
-
         this.editorView.focus();
     }
 

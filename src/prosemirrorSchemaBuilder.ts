@@ -109,6 +109,21 @@ export class ProsemirrorSchemaBuilder {
                 parseDOM: [{ tag: "br" }],
                 toDOM: () => ["br"]
             },
+            property: {
+                inline: true,
+                group: "inline",
+                selectable: false,
+                attrs: {
+                    name: { default: null },
+                    placeholder: { default: null }
+                },
+                toDOM: (node) => {
+                    return ["property", {
+                        name: node.attrs.name,
+                        placeholder: node.attrs.placeholder
+                    }];
+                }
+            },
             doc: {
                 content: "block+"
             }
