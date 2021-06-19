@@ -1,3 +1,4 @@
+import { Attributes, DataAttributes } from "@paperbits/common/html";
 import { HyperlinkTarget } from "@paperbits/common/permalinks";
 import { Schema } from "prosemirror-model";
 
@@ -165,14 +166,15 @@ export class ProsemirrorSchemaBuilder {
             },
             hyperlink: {
                 attrs: {
-                    "href": { default: undefined },
+                    [Attributes.Href]: { default: undefined },
                     "anchor": { default: undefined },
                     "anchorName": { default: undefined },
                     "targetKey": { default: undefined },
-                    "target": { default: undefined },
-                    "download": { default: undefined },
-                    "data-toggle": { default: undefined },
-                    "data-target": { default: undefined }
+                    [Attributes.Target]: { default: undefined },
+                    [Attributes.Download]: { default: undefined },
+                    [DataAttributes.Toggle]: { default: undefined },
+                    [DataAttributes.Target]: { default: undefined },
+                    [DataAttributes.TriggerEvent]: { default: undefined }
                 },
                 toDOM: (node) => {
                     const hyperlink = node.attrs;
@@ -182,10 +184,13 @@ export class ProsemirrorSchemaBuilder {
                     switch (hyperlink.target) {
                         case HyperlinkTarget.popup:
                             hyperlinkObj = {
-                                "data-toggle": "popup",
-                                "data-target": `#${hyperlink.targetKey.replace("popups/", "popups")}`,
-                                "href": "javascript:void(0)"
+                                [DataAttributes.Toggle]: "popup",
+                                [DataAttributes.Target]: `#${hyperlink.targetKey.replace("popups/", "popups")}`,
+                                [DataAttributes.TriggerEvent]: hyperlink.triggerEvent,
+                                [Attributes.Href]: "javascript:void(0)"
                             };
+
+                            console.log(hyperlinkObj);
                             break;
 
                         case HyperlinkTarget.download:
@@ -206,7 +211,12 @@ export class ProsemirrorSchemaBuilder {
                 },
                 parseDOM: [{
                     tag: "a",
-                    getAttrs: (dom) => { return { href: dom.href, target: dom.target }; }
+                    getAttrs: (dom) => {
+                        return {
+                            href: dom.href, 
+                            target: dom.target
+                        };
+                    }
                 }],
                 inclusive: false
             }
