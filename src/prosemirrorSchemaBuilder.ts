@@ -1,4 +1,4 @@
-import { Attributes, DataAttributes } from "@paperbits/common/html";
+import { Attributes, DataAttributes, HyperlinkRels } from "@paperbits/common/html";
 import { HyperlinkTarget } from "@paperbits/common/permalinks";
 import { Schema } from "prosemirror-model";
 
@@ -172,6 +172,7 @@ export class ProsemirrorSchemaBuilder {
                     "targetKey": { default: undefined },
                     [Attributes.Target]: { default: undefined },
                     [Attributes.Download]: { default: undefined },
+                    [Attributes.Rel]: { default: undefined },
                     [DataAttributes.Toggle]: { default: undefined },
                     [DataAttributes.Target]: { default: undefined },
                     [DataAttributes.TriggerEvent]: { default: undefined }
@@ -180,6 +181,7 @@ export class ProsemirrorSchemaBuilder {
                     const hyperlink = node.attrs;
 
                     let hyperlinkObj;
+                    let rels = null;
 
                     switch (hyperlink.target) {
                         case HyperlinkTarget.popup:
@@ -190,20 +192,24 @@ export class ProsemirrorSchemaBuilder {
                                 [Attributes.Href]: "javascript:void(0)"
                             };
 
-                            console.log(hyperlinkObj);
                             break;
 
                         case HyperlinkTarget.download:
                             hyperlinkObj = {
-                                href: hyperlink.href,
-                                download: "" // Leave empty unless file name gets specified.
+                                [Attributes.Href]: hyperlink.href,
+                                [Attributes.Download]: "" // Leave empty unless file name gets specified.
                             };
                             break;
 
                         default:
+                            if (hyperlink.targetKey.startsWith("urls/")) {
+                                rels = [HyperlinkRels.NoOpener, HyperlinkRels.NoReferrer].join(" ");
+                            }
+
                             hyperlinkObj = {
-                                href: `${hyperlink.href}${hyperlink.anchor ? "#" + hyperlink.anchor : ""}`,
-                                target: hyperlink.target
+                                [Attributes.Href]: `${hyperlink.href}${hyperlink.anchor ? "#" + hyperlink.anchor : ""}`,
+                                [Attributes.Target]: hyperlink.target,
+                                [Attributes.Rel]: rels
                             };
                     }
 
@@ -213,7 +219,7 @@ export class ProsemirrorSchemaBuilder {
                     tag: "a",
                     getAttrs: (dom) => {
                         return {
-                            href: dom.href, 
+                            href: dom.href,
                             target: dom.target
                         };
                     }
