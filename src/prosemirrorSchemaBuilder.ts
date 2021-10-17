@@ -202,7 +202,7 @@ export class ProsemirrorSchemaBuilder {
                             break;
 
                         default:
-                            if (hyperlink.targetKey.startsWith("urls/")) {
+                            if (hyperlink.targetKey?.startsWith("urls/")) {
                                 rels = [HyperlinkRels.NoOpener, HyperlinkRels.NoReferrer].join(" ");
                             }
 
