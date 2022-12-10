@@ -84,16 +84,17 @@ export function buildKeymap(schema, mapKeys) {
 
     if (type = schema.nodes.break) {
         const br = type, cmd = chainCommands(exitCode, (state, dispatch) => {
-            const { $cursor } = state.selection;
+            const $anchor = state.selection.$anchor;
 
-            if (!$cursor) {
+            if (!$anchor) {
                 return;
             }
 
-            if ($cursor.nodeBefore && $cursor.nodeBefore.type.name === "break") {
-                dispatch(state.tr.delete($cursor.pos - 1, $cursor.pos)
+            if ($anchor.nodeBefore && $anchor.nodeBefore.type.name === "break") {
+                dispatch(state.tr.delete($anchor.pos - 1, $anchor.pos)
                     .replaceSelectionWith(schema.nodes.paragraph.create()).scrollIntoView());
-            } else {
+            }
+            else {
                 dispatch(state.tr.replaceSelectionWith(br.create()).scrollIntoView());
             }
 

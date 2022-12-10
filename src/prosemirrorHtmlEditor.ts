@@ -18,7 +18,7 @@ const builder = new ProsemirrorSchemaBuilder();
 const schema = builder.build();
 
 export class ProseMirrorHtmlEditor implements IHtmlEditor {
-    private element: Element;
+    private element: HTMLElement;
     private editorView: EditorView;
     private content: any;
 
@@ -99,12 +99,10 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         }
 
         const selectionState = new SelectionState();
+        const $anchor = state.selection.$anchor;
 
-        const cursor = state.selection.$cursor || state.selection.$from;
-
-        if (cursor) {
-            const path = cursor.path.filter(x => x.type);
-            const currentBlock = path[path.length - 1];
+        if ($anchor) {
+            const currentBlock = $anchor.node();
             const blockType = currentBlock.type;
             const typeName = blockType.name;
 
@@ -254,7 +252,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         const doc = tr.doc;
 
         const markLocation = (!state.selection.empty && state.selection) ||
-            (state.selection.$cursor && this.getMarkLocation(doc, state.selection.$cursor.pos, markType));
+            (state.selection.$anchor && this.getMarkLocation(doc, state.selection.$anchor.pos, markType));
 
         if (!markLocation) {
             return;
@@ -273,7 +271,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     private removeMark(markType: any): void {
         const state = this.editorView.state;
-        const markLocation = (!state.selection.empty && state.selection) || this.getMarkLocation(state.tr.doc, state.selection.$cursor.pos, markType);
+        const markLocation = (!state.selection.empty && state.selection) || this.getMarkLocation(state.tr.doc, state.selection.$anchor.pos, markType);
 
         if (!markLocation) {
             return;
@@ -346,8 +344,8 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         const doc = this.editorView.state.tr.doc;
         let $pos: any;
 
-        if (this.editorView.state.selection.$cursor) {
-            $pos = doc.resolve(this.editorView.state.selection.$cursor.pos);
+        if (this.editorView.state.selection.$anchor) {
+            $pos = doc.resolve(this.editorView.state.selection.$anchor.pos);
         }
         else {
             $pos = doc.resolve(this.editorView.state.selection.$from.pos);
@@ -399,14 +397,13 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     private async updateTextStyle(textStyleKey: string, viewport: string = "xs"): Promise<void> {
-        const cursor = this.editorView.state.selection.$cursor || this.editorView.state.selection.$from;
+        const $anchor = this.editorView.state.selection.$anchor;
 
-        if (!cursor) {
+        if (!$anchor) {
             return;
         }
 
-        const path = cursor.path.filter(x => x.type);
-        const currentBlock = path[path.length - 1];
+        const currentBlock = $anchor.node();
         const blockType = currentBlock.type;
         const blockStyle: LocalStyles = currentBlock.attrs.styles || {};
 
@@ -435,14 +432,13 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     }
 
     private async setAlignment(styleKey: string, viewport: string = "xs"): Promise<void> {
-        const cursor = this.editorView.state.selection.$cursor || this.editorView.state.selection.$from;
+        const $anchor = this.editorView.state.selection.$anchor;
 
-        if (!cursor) {
+        if (!$anchor) {
             return;
         }
 
-        const path = cursor.path.filter(x => x.type);
-        const currentBlock = path[path.length - 1];
+        const currentBlock = $anchor.node();
         const blockType = currentBlock.type;
         const blockStyle = currentBlock.attrs.styles || {};
 
@@ -512,7 +508,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     public enable(): void {
         if (this.editorView) {
-            this.editorView.dom.contentEditable = true;
+            this.editorView.dom.setAttribute("contentEditable", "true");
             this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
             return;
         }
@@ -548,7 +544,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         if (!this.editorView) {
             return;
         }
-        this.editorView.dom.contentEditable = false;
+        this.editorView.dom.removeAttribute("contentEditable");
     }
 
     public attachToElement(element: HTMLElement): void {
