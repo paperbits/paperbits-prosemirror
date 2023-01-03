@@ -13,6 +13,7 @@ import { keymap } from "prosemirror-keymap";
 import { wrapInList } from "./lists";
 import { buildKeymap } from "./keymap";
 import { ProsemirrorSchemaBuilder } from "./prosemirrorSchemaBuilder";
+import { Attributes } from "@paperbits/common/html";
 
 const builder = new ProsemirrorSchemaBuilder();
 const schema = builder.build();
@@ -508,7 +509,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     public enable(): void {
         if (this.editorView) {
-            this.editorView.dom.setAttribute("contentEditable", "true");
+            this.editorView.dom.setAttribute(Attributes.ContentEditable, "true");
             this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
             return;
         }
@@ -544,7 +545,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         if (!this.editorView) {
             return;
         }
-        this.editorView.dom.removeAttribute("contentEditable");
+        this.editorView.dom.removeAttribute(Attributes.ContentEditable);
     }
 
     public attachToElement(element: HTMLElement): void {
