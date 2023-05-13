@@ -156,36 +156,43 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
     public toggleBold(): void {
         toggleMark(schema.marks.bold)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
+        this.eventManager.dispatchEvent("onSelectionChange", this);
     }
 
     public toggleItalic(): void {
         toggleMark(schema.marks.italic)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
+        this.eventManager.dispatchEvent("onSelectionChange", this);
     }
 
     public toggleUnderlined(): void {
         toggleMark(schema.marks.underlined)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
+        this.eventManager.dispatchEvent("onSelectionChange", this);
     }
 
     public toggleHighlighted(): void {
         toggleMark(schema.marks.highlighted)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
+        this.eventManager.dispatchEvent("onSelectionChange", this);
     }
 
     public toggleStriked(): void {
         toggleMark(schema.marks.striked)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
+        this.eventManager.dispatchEvent("onSelectionChange", this);
     }
 
     public toggleCode(): void {
         toggleMark(schema.marks.code)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
+        this.eventManager.dispatchEvent("onSelectionChange", this);
     }
 
     public toggleOrderedList(): void {
         wrapInList(schema.nodes.ordered_list)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
+        this.eventManager.dispatchEvent("onSelectionChange", this);
     }
 
     public async toggleUnorderedList(styleKey: string = "globals/ul/default"): Promise<void> {
@@ -201,6 +208,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
         wrapInList(schema.nodes.bulleted_list, attrs)(this.editorView.state, this.editorView.dispatch);
         this.editorView.focus();
+        this.eventManager.dispatchEvent("onSelectionChange", this);
     }
 
     public toggleParagraph(): void {
