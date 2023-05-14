@@ -8,12 +8,14 @@ import { EditorState, Plugin } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { baseKeymap, toggleMark, setBlockType } from "prosemirror-commands";
 import { splitListItem, liftListItem, sinkListItem } from "prosemirror-schema-list";
+import { TextSelection } from "prosemirror-state";
 import { history } from "prosemirror-history";
 import { keymap } from "prosemirror-keymap";
 import { wrapInList } from "./lists";
 import { buildKeymap } from "./keymap";
 import { ProsemirrorSchemaBuilder } from "./prosemirrorSchemaBuilder";
 import { Attributes } from "@paperbits/common/html";
+import { ViewManager } from "@paperbits/common/ui";
 
 const builder = new ProsemirrorSchemaBuilder();
 const schema = builder.build();
@@ -25,7 +27,8 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
 
     constructor(
         readonly eventManager: EventManager,
-        readonly styleCompiler: StyleCompiler
+        readonly styleCompiler: StyleCompiler,
+        readonly viewManager: ViewManager
     ) { }
 
     public onStateChange: (state: BlockModel[]) => void;
@@ -515,15 +518,42 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         }
     }
 
-    public enable(): void {
+    private placeCursorUnderMouse(hostElement: HTMLElement): void {
+        if (!hostElement) {
+            return;
+        }
+
+        setTimeout(() => {
+            hostElement.focus();
+
+            const pointerPosition = this.viewManager.getPointerPosition();
+            const coords = { left: pointerPosition.x, top: pointerPosition.y };
+            const cursorPosition = this.editorView.posAtCoords(coords);
+
+            if (!cursorPosition) {
+                return;
+            }
+
+            const state = this.editorView.state;
+            const transaction = state.tr.setSelection(TextSelection.create(state.doc, cursorPosition.pos, cursorPosition.pos));
+
+            this.editorView.dispatch(transaction);
+        }, 100);
+    }
+
+    public enable(activeElement: HTMLElement): void {
         if (this.editorView) {
             this.editorView.dom.setAttribute(Attributes.ContentEditable, "true");
             this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
+
+            if (activeElement) {
+                this.placeCursorUnderMouse(activeElement);
+            }
+
             return;
         }
 
         const doc: any = schema.nodeFromJSON(this.content);
-
         const handleUpdates = this.handleUpdates.bind(this);
 
         const detectChangesPlugin = new Plugin({
@@ -545,14 +575,20 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
                     history()])
             })
         });
+
         this.eventManager.dispatchEvent("htmlEditorChanged", this);
         this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
+
+        if (activeElement) {
+            this.placeCursorUnderMouse(activeElement);
+        }
     }
 
     public disable(): void {
         if (!this.editorView) {
             return;
         }
+
         this.editorView.dom.removeAttribute(Attributes.ContentEditable);
     }
 
