@@ -16,6 +16,7 @@ import { buildKeymap } from "./keymap";
 import { ProsemirrorSchemaBuilder } from "./prosemirrorSchemaBuilder";
 import { Attributes } from "@paperbits/common/html";
 import { ViewManager } from "@paperbits/common/ui";
+import { ModelConverter } from "./modelConverter";
 
 const builder = new ProsemirrorSchemaBuilder();
 const schema = builder.build();
@@ -43,12 +44,12 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             content = this.content.content;
         }
 
-        return this.proseMirrorModelToModel(content);
+        return ModelConverter.proseMirrorModelToModel(content);
     }
 
     public setState(content: BlockModel[]): void {
         try {
-            const prosemirrorContent = this.modelToProseMirrorModel(content);
+            const prosemirrorContent = ModelConverter.modelToProseMirrorModel(content);
 
             this.content = {
                 type: "doc",
@@ -66,30 +67,6 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         catch (error) {
             console.error(error.stack);
         }
-    }
-
-    private modelToProseMirrorModel(source: any): any {
-        let result = JSON.stringify(source);
-
-        result = result
-            .replaceAll(`ordered-list`, `ordered_list`)
-            .replaceAll(`bulleted-list`, `bulleted_list`)
-            .replaceAll(`list-item`, `list_item`)
-            .replaceAll(`"nodes":`, `"content":`);
-
-        return JSON.parse(result);
-    }
-
-    private proseMirrorModelToModel(source: any): BlockModel[] {
-        let result = JSON.stringify(source);
-
-        result = result
-            .replaceAll(`ordered_list`, `ordered-list`)
-            .replaceAll(`bulleted_list`, `bulleted-list`)
-            .replaceAll(`list_item`, `list-item`)
-            .replaceAll(`"content":`, `"nodes":`);
-
-        return JSON.parse(result);
     }
 
     public getSelectionState(): SelectionState {
@@ -518,7 +495,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         }
     }
 
-    private placeCursorUnderMouse(hostElement: HTMLElement): void {
+    private placeCaretUnderPointer(hostElement: HTMLElement): void {
         if (!hostElement) {
             return;
         }
@@ -547,7 +524,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
             this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
 
             if (activeElement) {
-                this.placeCursorUnderMouse(activeElement);
+                this.placeCaretUnderPointer(activeElement);
             }
 
             return;
@@ -580,7 +557,7 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         this.eventManager.dispatchEvent(HtmlEditorEvents.onSelectionChange);
 
         if (activeElement) {
-            this.placeCursorUnderMouse(activeElement);
+            this.placeCaretUnderPointer(activeElement);
         }
     }
 
