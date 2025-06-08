@@ -3,7 +3,7 @@ import { EventManager } from "@paperbits/common/events";
 import { StyleCompiler, LocalStyles } from "@paperbits/common/styles";
 import { HyperlinkModel } from "@paperbits/common/permalinks";
 import { IHtmlEditor, SelectionState, alignmentStyleKeys, HtmlEditorEvents } from "@paperbits/common/editing";
-import { DOMSerializer } from "prosemirror-model";
+import { DOMSerializer, Mark } from "prosemirror-model";
 import { EditorState, Plugin } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 import { baseKeymap, toggleMark, setBlockType } from "prosemirror-commands";
@@ -329,30 +329,34 @@ export class ProseMirrorHtmlEditor implements IHtmlEditor {
         this.updateMark(schema.marks.hyperlink, hyperlink);
     }
 
+    public getMarksOfTypeInRange(doc, selection, type): Mark[] {
+        const from = selection.from;
+        const to = selection.to;
+        const marks = new Set<Mark>();
+
+        doc.nodesBetween(from, to, (node) => {
+            node.marks.forEach(mark => {
+                if (mark.type === type) {
+                    marks.add(mark)
+                }
+            });
+        });
+
+        return Array.from(marks);
+    }
+
     public getHyperlink(): HyperlinkModel { // TODO: Move to Selection state
         const doc = this.editorView.state.tr.doc;
-        let $pos: any;
+        const selection = this.editorView.state.selection;
+        const hyperlinkMarks = this.getMarksOfTypeInRange(doc, selection, schema.marks.hyperlink);
 
-        if (this.editorView.state.selection.$anchor) {
-            $pos = doc.resolve(this.editorView.state.selection.$anchor.pos);
-        }
-        else {
-            $pos = doc.resolve(this.editorView.state.selection.$from.pos);
-        }
-
-        const start = $pos.parent.childAfter($pos.parentOffset);
-
-        if (!start?.node) {
-            return null;
-        }
-
-        const mark = start.node.marks.find((mark) => mark.type === schema.marks.hyperlink);
-        return mark ? mark.attrs : null;
+        return hyperlinkMarks.length > 0
+            ? (<any>hyperlinkMarks[0]).attrs
+            : null;
     }
 
     public setAnchor(hash: string, anchorKey: string): void {
         // const node = <HTMLElement>this.getClosestNode(this.blockNodes);
-
         // Bindings.applyAnchor(node, hash, anchorKey);
     }
 
